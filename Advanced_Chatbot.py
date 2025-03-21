@@ -25,21 +25,15 @@ MODEL_FILES = [
 # Local directory to store downloaded model files
 LOCAL_MODEL_DIR = "./DistilGPT2_Model"
 
-# Static placeholders (shortened for brevity; add the rest from your original code)
+# Static placeholders (shortened; add the rest as needed)
 static_placeholders = {
     "{{WEBSITE_URL}}": "www.events-ticketing.com",
     "{{SUPPORT_TEAM_LINK}}": "www.support-team.com",
-    "{{CONTACT_SUPPORT_LINK}}": "www.support-team.com",
-    "{{SUPPORT_CONTACT_LINK}}": "www.support-team.com",
     "{{CANCEL_TICKET_SECTION}}": "<b>Cancel Ticket</b>",
-    "{{CANCEL_TICKET_OPTION}}": "<b>Cancel Ticket</b>",
-    "{{GET_REFUND_OPTION}}": "<b>Get Refund</b>",
-    "{{UPGRADE_TICKET_INFORMATION}}": "<b>Upgrade Ticket Information</b>",
-    "{{TICKET_SECTION}}": "<b>Ticketing</b>",
-    # Add the rest of your static placeholders here
+    # Add the rest here
 }
 
-# Function to download model files from GitHub
+# Function to download model files from GitHub with streaming
 def download_model_files():
     if not os.path.exists(LOCAL_MODEL_DIR):
         os.makedirs(LOCAL_MODEL_DIR)
@@ -48,25 +42,33 @@ def download_model_files():
         file_url = GITHUB_URL + file_name
         local_path = os.path.join(LOCAL_MODEL_DIR, file_name)
         if not os.path.exists(local_path):
-            response = requests.get(file_url)
-            if response.status_code == 200:
-                with open(local_path, 'wb') as f:
-                    f.write(response.content)
-            else:
-                st.error(f"Failed to download {file_name} from GitHub.")
+            try:
+                response = requests.get(file_url, stream=True)
+                if response.status_code == 200:
+                    response.raw.decode_content = True
+                    with open(local_path, 'wb') as f:
+                        for chunk in response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                else:
+                    st.error(f"Failed to download {file_name} from GitHub. Status code: {response.status_code}")
+            except Exception as e:
+                st.error(f"Error downloading {file_name}: {str(e)}")
 
 # Load the GPT-2 model and tokenizer with caching
 @st.cache_resource
 def load_gpt2_model():
     download_model_files()
-    tokenizer = GPT2Tokenizer.from_pretrained(LOCAL_MODEL_DIR, safe_serialization=False)
-    model = GPT2LMHeadModel.from_pretrained(LOCAL_MODEL_DIR)
-    return tokenizer, model
+    try:
+        tokenizer = GPT2Tokenizer.from_pretrained(LOCAL_MODEL_DIR)
+        model = GPT2LMHeadModel.from_pretrained(LOCAL_MODEL_DIR)
+        return tokenizer, model
+    except Exception as e:
+        st.error(f"Error loading model: {str(e)}")
+        raise e
 
 # Load the SpaCy model for NER with caching
 @st.cache_resource
 def load_spacy_model():
-    # Download the SpaCy model if not already installed
     import spacy.cli
     spacy.cli.download("en_core_web_trf")
     nlp = spacy.load("en_core_web_trf")
@@ -78,14 +80,11 @@ def extract_dynamic_placeholders(instruction, nlp):
     dynamic_placeholders = {}
     
     for ent in doc.ents:
-        if ent.label_ == "EVENT":  # Adjust if your model uses a different label
-            event_text = ent.text.title()
-            dynamic_placeholders['{{EVENT}}'] = f"<b>{event_text}</b>"
-        elif ent.label_ == "GPE":  # GPE for cities/countries
-            city_text = ent.text.title()
-            dynamic_placeholders['{{CITY}}'] = f"<b>{city_text}</b>"
+        if ent.label_ == "EVENT":
+            dynamic_placeholders['{{EVENT}}'] = f"<b>{ent.text.title()}</b>"
+        elif ent.label_ == "GPE":
+            dynamic_placeholders['{{CITY}}'] = f"<b>{ent.text.title()}</b>"
     
-    # Default values if no entities are found
     if '{{EVENT}}' not in dynamic_placeholders:
         dynamic_placeholders['{{EVENT}}'] = "event"
     if '{{CITY}}' not in dynamic_placeholders:
@@ -142,11 +141,11 @@ def main():
     
     if st.button("Submit"):
         if user_input:
-            user_input = user_input[0].upper() + user_input[1:]  # Capitalize first letter
+            user_input = user_input[0].upper() + user_input[1:]
             with st.spinner("Generating response..."):
                 response = generate_response(user_input, tokenizer, model, nlp)
             st.write("**Chatbot Response:**")
-            st.markdown(response, unsafe_allow_html=True)  # Allow HTML for bold text
+            st.markdown(response, unsafe_allow_html=True)
         else:
             st.warning("Please enter a question.")
 
