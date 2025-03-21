@@ -59,7 +59,7 @@ def download_model_files():
 @st.cache_resource
 def load_gpt2_model():
     download_model_files()
-    tokenizer = GPT2Tokenizer.from_pretrained(LOCAL_MODEL_DIR)
+    tokenizer = GPT2Tokenizer.from_pretrained(LOCAL_MODEL_DIR, safe_serialization=False))
     model = GPT2LMHeadModel.from_pretrained(LOCAL_MODEL_DIR)
     return tokenizer, model
 
