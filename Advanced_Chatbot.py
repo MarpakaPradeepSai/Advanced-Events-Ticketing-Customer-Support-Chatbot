@@ -1,27 +1,23 @@
-# app.py
 import streamlit as st
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import torch
 
-@st.cache_resource
+# Model and tokenizer loading function
+@st.cache(allow_output_mutation=True)
 def load_model():
-    # Explicitly specify safetensors usage
-    model = GPT2LMHeadModel.from_pretrained(
-        'DistilGPT2_Model',
-        use_safetensors=True,
-        local_files_only=True
-    )
-    tokenizer = GPT2Tokenizer.from_pretrained(
-        'DistilGPT2_Model',
-        local_files_only=True
-    )
-    return model, tokenizer
-
-def generate_response(instruction, model, tokenizer, max_length=256):
-    device = model.device
+    model_dir = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
+    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+    model = GPT2LMHeadModel.from_pretrained(model_dir)
+    model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
     model.eval()
+    return tokenizer, model
 
+# Response generation function
+def generate_response(instruction, max_length=256):
+    tokenizer, model = load_model()
+    device = model.device
     input_text = f"Instruction: {instruction} Response:"
+
     inputs = tokenizer(input_text, return_tensors='pt', padding=True).to(device)
 
     with torch.no_grad():
@@ -40,26 +36,17 @@ def generate_response(instruction, model, tokenizer, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-def main():
-    st.title("Advanced Events Ticketing Chatbot 🤖")
-    st.write("Welcome! Ask me anything about ticket booking, events, or cancellations.")
-    
-    # Load model with progress
-    with st.spinner('Loading AI model...'):
-        model, tokenizer = load_model()
-    
-    # User input
-    user_input = st.text_input("Ask your question here:")
-    
-    if user_input:
-        # Generate response with loading indicator
-        with st.spinner('Generating answer...'):
-            formatted_input = user_input[0].upper() + user_input[1:]
-            response = generate_response(formatted_input, model, tokenizer)
-        
-        # Display response
-        st.subheader("Answer:")
-        st.write(response)
+# Streamlit app interface
+st.title("Advanced Events Ticketing Chatbot")
+st.write("Ask the chatbot about ticketing queries!")
 
-if __name__ == "__main__":
-    main()
+user_input = st.text_input("Your Query:", "")
+
+if st.button("Get Response"):
+    if user_input.strip():
+        user_input = user_input[0].upper() + user_input[1:]  # Capitalize first letter
+        with st.spinner("Generating response..."):
+            response = generate_response(user_input)
+        st.success(f"Chatbot: {response}")
+    else:
+        st.error("Please enter a valid query.")
