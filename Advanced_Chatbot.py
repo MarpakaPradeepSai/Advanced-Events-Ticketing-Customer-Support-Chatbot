@@ -196,7 +196,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     return response[response_start:].strip()
 
 # Streamlit UI
-st.title("🎟️ Advanced Events Ticketing Chatbot")
+st.title("Advanced Events Ticketing Chatbot")
 st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
 # Initialize spaCy model for NER
