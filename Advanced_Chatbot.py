@@ -4,6 +4,9 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import requests
 import os
 
+import warnings
+warnings.filterwarnings('ignore')
+
 # GitHub directory containing the model files
 GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
 
