@@ -1,13 +1,15 @@
 import streamlit as st
-from transformers import AutoModelForCausalLM, GPT2Tokenizer  # <-- UPDATED IMPORT
+from transformers import AutoModelForCausalLM, GPT2Tokenizer
 import torch
 import os
 import requests
+from pathlib import Path
 
-MODEL_DIR = "DistilGPT2_Model"
+MODEL_DIR = Path("DistilGPT2_Model")
 GITHUB_BASE_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model/"
 
-os.makedirs(MODEL_DIR, exist_ok=True)
+# Create model directory
+MODEL_DIR.mkdir(exist_ok=True)
 
 REQUIRED_FILES = [
     "config.json",
@@ -19,32 +21,40 @@ REQUIRED_FILES = [
     "generation_config.json"
 ]
 
-# Download files
+# Download with validation
 for filename in REQUIRED_FILES:
-    file_path = os.path.join(MODEL_DIR, filename)
-    if not os.path.exists(file_path):
-        with st.spinner(f"Downloading {filename}..."):
-            response = requests.get(GITHUB_BASE_URL + filename)
-            with open(file_path, "wb") as f:
-                f.write(response.content)
+    file_path = MODEL_DIR / filename
+    if not file_path.exists():
+        try:
+            with st.spinner(f"Downloading {filename}..."):
+                response = requests.get(GITHUB_BASE_URL + filename)
+                response.raise_for_status()  # Validate download
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+        except Exception as e:
+            st.error(f"Failed to download {filename}: {str(e)}")
+            st.stop()
 
 @st.cache_resource
 def load_model():
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = AutoModelForCausalLM.from_pretrained(  # <-- UPDATED MODEL LOADING
-        MODEL_DIR,
-        use_safetensors=True
-    ).to(device)
-    
-    tokenizer = GPT2Tokenizer.from_pretrained(MODEL_DIR)
-    model.eval()
-    return model, tokenizer
+    try:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = AutoModelForCausalLM.from_pretrained(
+            str(MODEL_DIR),
+            use_safetensors=True,
+            trust_remote_code=True  # Add this for custom architectures
+        ).to(device)
+        
+        tokenizer = GPT2Tokenizer.from_pretrained(str(MODEL_DIR))
+        model.eval()
+        return model, tokenizer
+    except Exception as e:
+        st.error(f"Model loading failed: {str(e)}")
+        st.stop()
 
 model, tokenizer = load_model()
 
-# ... rest of your code remains the same ...
-
-# ... rest of your code remains the same ...
+# ... rest of your code ...
 
 def generate_response(instruction, max_length=256):
     device = model.device
