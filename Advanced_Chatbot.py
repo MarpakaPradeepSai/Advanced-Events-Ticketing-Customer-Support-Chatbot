@@ -237,25 +237,19 @@ if prompt := st.chat_input("Enter your question:"):
         with st.chat_message("user", avatar="👤"):
             st.markdown(prompt, unsafe_allow_html=True)
 
-        # Simulate bot thinking with a "typing" indicator
+        # Simulate bot thinking with a "typing" indicator using st.spinner
         with st.chat_message("assistant", avatar="🤖"):
-            message_placeholder = st.empty()
-            full_response = ""
-            thinking_dots = "Generating response..." # Changed "Thinking..." to "Generating response..."
-            message_placeholder.markdown(thinking_dots)
-            time.sleep(0.5)
+            with st.spinner("Generating response..."): # Using st.spinner here
+                # Extract dynamic placeholders
+                dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
 
-            # Extract dynamic placeholders
-            dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                # Generate response using DistilGPT2 model
+                response = generate_response(model, tokenizer, prompt)
 
-            # Generate response using DistilGPT2 model
-            response = generate_response(model, tokenizer, prompt)
+                # Replace placeholders in the response
+                full_response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
 
-            # Replace placeholders in the response
-            full_response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
-
-            message_placeholder.empty()
-            message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                st.markdown(full_response, unsafe_allow_html=True) # Directly display response
 
         # Add assistant message to chat history
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
