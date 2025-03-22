@@ -27,9 +27,9 @@ def load_model():
             torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
         )
 
-        # Load tokenizer
+        # Load tokenizer from the directory
         tokenizer = GPT2Tokenizer.from_pretrained(
-            "DistilGPT2_Model",
+            "DistilGPT2_Model",  # Path to the directory containing tokenizer files
             local_files_only=True
         )
 
