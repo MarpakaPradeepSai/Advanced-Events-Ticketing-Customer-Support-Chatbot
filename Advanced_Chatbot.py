@@ -1,70 +1,67 @@
 import streamlit as st
-from transformers import AutoModelForCausalLM, GPT2Tokenizer
 import torch
-import os
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import requests
-from pathlib import Path
+import os
 
-MODEL_DIR = Path("DistilGPT2_Model")
-GITHUB_BASE_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model/"
+# GitHub directory containing the model files
+GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
 
-# Create model directory
-MODEL_DIR.mkdir(exist_ok=True)
-
-REQUIRED_FILES = [
+# List of model files to download
+MODEL_FILES = [
     "config.json",
-    "model.safetensors",
+    "generation_config.json",
     "merges.txt",
-    "vocab.json",
-    "tokenizer_config.json",
+    "model.safetensors",
     "special_tokens_map.json",
-    "generation_config.json"
+    "tokenizer_config.json",
+    "vocab.json"
 ]
 
-# Download with validation
-for filename in REQUIRED_FILES:
-    file_path = MODEL_DIR / filename
-    if not file_path.exists():
-        try:
-            with st.spinner(f"Downloading {filename}..."):
-                response = requests.get(GITHUB_BASE_URL + filename)
-                response.raise_for_status()  # Validate download
-                with open(file_path, "wb") as f:
-                    f.write(response.content)
-        except Exception as e:
-            st.error(f"Failed to download {filename}: {str(e)}")
-            st.stop()
-
-@st.cache_resource
-def load_model():
-    try:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model = AutoModelForCausalLM.from_pretrained(
-            str(MODEL_DIR),
-            use_safetensors=True,
-            trust_remote_code=True  # Add this for custom architectures
-        ).to(device)
+# Function to download model files from GitHub
+def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
+    os.makedirs(model_dir, exist_ok=True)
+    
+    for filename in MODEL_FILES:
+        url = f"{GITHUB_MODEL_URL}/{filename}"
+        local_path = os.path.join(model_dir, filename)
         
-        tokenizer = GPT2Tokenizer.from_pretrained(str(MODEL_DIR))
-        model.eval()
-        return model, tokenizer
-    except Exception as e:
-        st.error(f"Model loading failed: {str(e)}")
-        st.stop()
+        if not os.path.exists(local_path):
+            response = requests.get(url)
+            if response.status_code == 200:
+                with open(local_path, "wb") as f:
+                    f.write(response.content)
+            else:
+                st.error(f"Failed to download {filename} from GitHub.")
+                return False
+    return True
 
-model, tokenizer = load_model()
+# Load model and tokenizer
+@st.cache(allow_output_mutation=True, show_spinner=False)
+def load_model_and_tokenizer():
+    model_dir = "/tmp/DistilGPT2_Model"
+    if not download_model_files(model_dir):
+        st.error("Model download failed. Check your internet connection or GitHub URL.")
+        return None, None
+    
+    model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
+    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+    return model, tokenizer
 
-# ... rest of your code ...
+# Generate a chatbot response
+def generate_response(model, tokenizer, instruction, max_length=256):
+    model.eval()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
 
-def generate_response(instruction, max_length=256):
-    device = model.device
     input_text = f"Instruction: {instruction} Response:"
     
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-    
+
     with torch.no_grad():
         outputs = model.generate(
-            **inputs,
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
             max_length=max_length,
             num_return_sequences=1,
             temperature=0.7,
@@ -72,30 +69,27 @@ def generate_response(instruction, max_length=256):
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
-    
+
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# Streamlit interface
-st.set_page_config(page_title="Ticket Support Chatbot", page_icon="🤖")
-st.title("Events Ticketing Support Chatbot")
+# Streamlit UI
+def main():
+    st.title("🎟️ Advanced Events Ticketing Chatbot")
+    st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
-user_input = st.text_input("Ask something about ticketing:", 
-                         placeholder="How do I cancel my ticket?")
+    model, tokenizer = load_model_and_tokenizer()
+    if model is None or tokenizer is None:
+        st.error("Failed to load the model.")
+        return
 
-if st.button("Get Response") or user_input:
+    user_input = st.text_input("You:", "")
+    
     if user_input:
-        user_query = user_input[0].upper() + user_input[1:]
-        
         with st.spinner("Generating response..."):
-            response = generate_response(user_query)
-        
-        st.success("Response generated!")
-        st.markdown(f"**User:** {user_query}")
-        st.markdown(f"**Chatbot:** {response}")
-    else:
-        st.warning("Please enter your query first.")
+            response = generate_response(model, tokenizer, user_input)
+            st.success(response)
 
-st.markdown("---")
-st.markdown("Powered by DistilGPT-2 | Developed by [Your Name]")
+if __name__ == "__main__":
+    main()
