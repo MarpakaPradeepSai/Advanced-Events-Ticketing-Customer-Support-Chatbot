@@ -2,17 +2,20 @@ import streamlit as st
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import torch
 
-# Model and tokenizer loading function
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model_dir = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
-    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+    model_dir = "https://huggingface.co/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/resolve/main/DistilGPT2_Model/"
+    
+    # Load tokenizer and model
+    tokenizer = GPT2Tokenizer.from_pretrained(model_dir, use_fast=True)
     model = GPT2LMHeadModel.from_pretrained(model_dir)
-    model.to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     model.eval()
+    
     return tokenizer, model
 
-# Response generation function
 def generate_response(instruction, max_length=256):
     tokenizer, model = load_model()
     device = model.device
@@ -36,7 +39,6 @@ def generate_response(instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# Streamlit app interface
 st.title("Advanced Events Ticketing Chatbot")
 st.write("Ask the chatbot about ticketing queries!")
 
