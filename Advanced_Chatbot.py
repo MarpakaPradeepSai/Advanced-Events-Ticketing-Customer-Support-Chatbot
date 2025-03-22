@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import DistilGPT2LMHeadModel, GPT2Tokenizer  # <-- CHANGED TO DistilGPT2
+from transformers import AutoModelForCausalLM, GPT2Tokenizer  # <-- UPDATED IMPORT
 import torch
 import os
 import requests
@@ -31,7 +31,7 @@ for filename in REQUIRED_FILES:
 @st.cache_resource
 def load_model():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = DistilGPT2LMHeadModel.from_pretrained(  # <-- CHANGED TO DistilGPT2
+    model = AutoModelForCausalLM.from_pretrained(  # <-- UPDATED MODEL LOADING
         MODEL_DIR,
         use_safetensors=True
     ).to(device)
@@ -41,6 +41,8 @@ def load_model():
     return model, tokenizer
 
 model, tokenizer = load_model()
+
+# ... rest of your code remains the same ...
 
 # ... rest of your code remains the same ...
 
