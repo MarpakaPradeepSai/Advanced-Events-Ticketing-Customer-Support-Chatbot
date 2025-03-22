@@ -1,54 +1,26 @@
 import streamlit as st
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import torch
-import os
-import requests
 
-# Function to download model files from GitHub
-def download_model_files():
-    model_dir = "DistilGPT2_Model"
-    if not os.path.exists(model_dir):
-        os.makedirs(model_dir)
-        url = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
-        st.write("Downloading model files from GitHub...")
-
-        files = [
-            "config.json",
-            "generation_config.json",
-            "merges.txt",
-            "model.safetensors",
-            "special_tokens_map.json",
-            "tokenizer_config.json",
-            "vocab.json"
-        ]
-        
-        for file_name in files:
-            file_url = f"{url}/{file_name}"
-            response = requests.get(file_url)
-            if response.status_code == 200:
-                with open(os.path.join(model_dir, file_name), 'wb') as f:
-                    f.write(response.content)
-            else:
-                st.error(f"Failed to download {file_name}")
-        st.write("Model files downloaded successfully!")
-
-# Load the model and tokenizer
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def load_model():
-    model_dir = "DistilGPT2_Model"
-    download_model_files()
-    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
-    model = GPT2LMHeadModel.from_pretrained(model_dir)
+    model_url = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
+    
+    model = GPT2LMHeadModel.from_pretrained(model_url)
+    tokenizer = GPT2Tokenizer.from_pretrained(model_url)
+    
+    # Move model to GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    
     return model, tokenizer, device
 
-# Generate response function
 def generate_response(model, tokenizer, device, instruction, max_length=256):
     model.eval()
     input_text = f"Instruction: {instruction} Response:"
+    
     inputs = tokenizer(input_text, return_tensors='pt', padding=True).to(device)
-
+    
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs['input_ids'],
@@ -60,31 +32,22 @@ def generate_response(model, tokenizer, device, instruction, max_length=256):
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
-
+    
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# Streamlit app
-def main():
-    st.title("Advanced Events Ticketing Chatbot")
-    st.write("Ask me anything about event ticketing!")
+# Streamlit UI
+st.title("Advanced Events Ticketing Chatbot")
+st.write("Ask me about ticketing, cancellations, and more!")
 
-    # Load model
-    model, tokenizer, device = load_model()
+model, tokenizer, device = load_model()
 
-    # User input
-    user_input = st.text_input("Your question:", "How do I cancel my ticket?")
-    
-    if st.button("Get Response"):
-        if user_input:
-            user_input = user_input[0].upper() + user_input[1:]  # Capitalize first letter
-            with st.spinner("Generating response..."):
-                response = generate_response(model, tokenizer, device, user_input)
-            st.subheader("Chatbot Response:")
-            st.write(response)
-        else:
-            st.warning("Please enter a question.")
+user_input = st.text_input("Your Question:", "")
 
-if __name__ == "__main__":
-    main()
+if user_input:
+    user_input = user_input[0].upper() + user_input[1:]  # Capitalize first letter
+    with st.spinner("Generating response..."):
+        response = generate_response(model, tokenizer, device, user_input)
+    st.subheader("Chatbot Response:")
+    st.write(response)
