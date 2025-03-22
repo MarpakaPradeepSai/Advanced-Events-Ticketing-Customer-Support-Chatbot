@@ -3,8 +3,8 @@ import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import requests
 import os
-
 import warnings
+
 warnings.filterwarnings('ignore')
 
 # GitHub directory containing the model files
@@ -40,7 +40,7 @@ def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     return True
 
 # Load model and tokenizer
-@st.cache(allow_output_mutation=True, show_spinner=False)
+@st.cache_resource(show_spinner=False)
 def load_model_and_tokenizer():
     model_dir = "/tmp/DistilGPT2_Model"
     if not download_model_files(model_dir):
