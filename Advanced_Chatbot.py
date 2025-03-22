@@ -23,11 +23,11 @@ MODEL_FILES = [
 # Function to download model files from GitHub
 def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     os.makedirs(model_dir, exist_ok=True)
-    
+
     for filename in MODEL_FILES:
         url = f"{GITHUB_MODEL_URL}/{filename}"
         local_path = os.path.join(model_dir, filename)
-        
+
         if not os.path.exists(local_path):
             response = requests.get(url)
             if response.status_code == 200:
@@ -51,7 +51,7 @@ def load_model_and_tokenizer():
     if not download_model_files(model_dir):
         st.error("Model download failed. Check your internet connection or GitHub URL.")
         return None, None
-    
+
     model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
     tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
     return model, tokenizer
@@ -60,8 +60,8 @@ def load_model_and_tokenizer():
 static_placeholders = {
     "{{WEBSITE_URL}}": "www.events-ticketing.com",
     "{{SUPPORT_TEAM_LINK}}": "www.support-team.com",
-    "{{CONTACT_SUPPORT_LINK}}" : "www.support-team.com",
-    "{{SUPPORT_CONTACT_LINK}}" : "www.support-team.com",
+    "{{CONTACT_SUPPORT_LINK}}": "www.support-team.com",
+    "{{SUPPORT_CONTACT_LINK}}": "www.support-team.com",
     "{{CANCEL_TICKET_SECTION}}": "<b>Cancel Ticket</b>",
     "{{CANCEL_TICKET_OPTION}}": "<b>Cancel Ticket</b>",
     "{{GET_REFUND_OPTION}}": "<b>Get Refund</b>",
@@ -102,37 +102,37 @@ static_placeholders = {
     "{{SELL_TICKET_OPTION}}": "<b>Sell Ticket</b>",
     "{{CANCELLATION_FEE_INFORMATION}}": "<b>Cancellation Fee Information</b>",
     "{{CUSTOMER_SUPPORT_PAGE}}": "<b>Customer Support</b>",
-    "{{PAYMENT_METHOD}}" : "<b>Payment</b>",
+    "{{PAYMENT_METHOD}}": "<b>Payment</b>",
     "{{VIEW_PAYMENT_METHODS}}": "<b>View Payment Methods</b>",
     "{{VIEW_CANCELLATION_POLICY}}": "<b>View Cancellation Policy</b>",
-    "{{SUPPORT_ SECTION}}" : "<b>Support</b>",
-    "{{CUSTOMER_SUPPORT_SECTION}}" : "<b>Customer Support</b>",
-    "{{HELP_SECTION}}" : "<b>Help</b>",
-    "{{TICKET_INFORMATION}}" : "<b>Ticket Information</b>",
-    "{{UPGRADE_TICKET_BUTTON}}" : "<b>Upgrade Ticket</b>",
-    "{{CANCEL_TICKET_BUTTON}}" : "<b>Cancel Ticket</b>",
-    "{{GET_REFUND_BUTTON}}" : "<b>Get Refund</b>",
-    "{{PAYMENTS_HELP_SECTION}}" : "<b>Payments Help</b>",
-    "{{PAYMENTS_PAGE}}" : "<b>Payments</b>",
-    "{{TICKET_DETAILS}}" : "<b>Ticket Details</b>",
-    "{{TICKET_INFORMATION_PAGE}}" : "<b>Ticket Information</b>",
-    "{{REPORT_PAYMENT_PROBLEM}}" : "<b>Report Payment</b>",
-    "{{TICKET_OPTIONS}}" : "<b>Ticket Options</b>",
-    "{{SEND_BUTTON}}" : "<b>Send</b>",
-    "{{PAYMENT_ISSUE_OPTION}}" : "<b>Payment Issue</b>",
-    "{{CUSTOMER_SUPPORT_PORTAL}}" : "<b>Customer Support</b>",
-    "{{UPGRADE_TICKET_OPTION}}" : "<b>Upgrade Ticket</b>",
-    "{{TICKET_AVAILABILITY_TAB}}" : "<b>Ticket Availability</b>",
-    "{{TRANSFER_TICKET_BUTTON}}" : "<b>Transfer Ticket</b>",
-    "{{TICKET_MANAGEMENT}}" : "<b>Ticket Management</b>",
-    "{{TICKET_STATUS_TAB}}" : "<b>Ticket Status</b>",
-    "{{TICKETING_PAGE}}" : "<b>Ticketing</b>",
-    "{{TICKET_TRANSFER_TAB}}" : "<b>Ticket Transfer</b>",
-    "{{CURRENT_TICKET_DETAILS}}" : "<b>Current Ticket Details</b>",
-    "{{UPGRADE_OPTION}}" : "<b>Upgrade</b>",
-    "{{CONNECT_WITH_ORGANIZER}}" : "<b>Connect with Organizer</b>",
-    "{{TICKETS_TAB}}" : "<b>Tickets</b>",
-    "{{ASSISTANCE_SECTION}}" : "<b>Assistance Section</b>",
+    "{{SUPPORT_ SECTION}}": "<b>Support</b>",
+    "{{CUSTOMER_SUPPORT_SECTION}}": "<b>Customer Support</b>",
+    "{{HELP_SECTION}}": "<b>Help</b>",
+    "{{TICKET_INFORMATION}}": "<b>Ticket Information</b>",
+    "{{UPGRADE_TICKET_BUTTON}}": "<b>Upgrade Ticket</b>",
+    "{{CANCEL_TICKET_BUTTON}}": "<b>Cancel Ticket</b>",
+    "{{GET_REFUND_BUTTON}}": "<b>Get Refund</b>",
+    "{{PAYMENTS_HELP_SECTION}}": "<b>Payments Help</b>",
+    "{{PAYMENTS_PAGE}}": "<b>Payments</b>",
+    "{{TICKET_DETAILS}}": "<b>Ticket Details</b>",
+    "{{TICKET_INFORMATION_PAGE}}": "<b>Ticket Information</b>",
+    "{{REPORT_PAYMENT_PROBLEM}}": "<b>Report Payment</b>",
+    "{{TICKET_OPTIONS}}": "<b>Ticket Options</b>",
+    "{{SEND_BUTTON}}": "<b>Send</b>",
+    "{{PAYMENT_ISSUE_OPTION}}": "<b>Payment Issue</b>",
+    "{{CUSTOMER_SUPPORT_PORTAL}}": "<b>Customer Support</b>",
+    "{{UPGRADE_TICKET_OPTION}}": "<b>Upgrade Ticket</b>",
+    "{{TICKET_AVAILABILITY_TAB}}": "<b>Ticket Availability</b>",
+    "{{TRANSFER_TICKET_BUTTON}}": "<b>Transfer Ticket</b>",
+    "{{TICKET_MANAGEMENT}}": "<b>Ticket Management</b>",
+    "{{TICKET_STATUS_TAB}}": "<b>Ticket Status</b>",
+    "{{TICKETING_PAGE}}": "<b>Ticketing</b>",
+    "{{TICKET_TRANSFER_TAB}}": "<b>Ticket Transfer</b>",
+    "{{CURRENT_TICKET_DETAILS}}": "<b>Current Ticket Details</b>",
+    "{{UPGRADE_OPTION}}": "<b>Upgrade</b>",
+    "{{CONNECT_WITH_ORGANIZER}}": "<b>Connect with Organizer</b>",
+    "{{TICKETS_TAB}}": "<b>Tickets</b>",
+    "{{ASSISTANCE_SECTION}}": "<b>Assistance Section</b>",
 
 }
 
@@ -176,7 +176,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     model.to(device)
 
     input_text = f"Instruction: {instruction} Response:"
-    
+
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
 
     with torch.no_grad():
@@ -241,7 +241,7 @@ if prompt := st.chat_input("Enter your question:"):
         with st.chat_message("assistant", avatar="🤖"):
             message_placeholder = st.empty()
             full_response = ""
-            thinking_dots = "... Thinking..."
+            thinking_dots = "Generating response..." # Changed "Thinking..." to "Generating response..."
             message_placeholder.markdown(thinking_dots)
             time.sleep(0.5)
 
@@ -288,4 +288,3 @@ if st.session_state.chat_history:
     if st.button("Reset Chat", key="reset_button"):
         st.session_state.chat_history = []
         st.rerun()
-
