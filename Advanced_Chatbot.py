@@ -1,105 +1,89 @@
-# app.py
 import streamlit as st
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import torch
 import os
-from safetensors.torch import load_file
+import requests
 
-# Configure environment for safetensors
-os.environ["SAFETENSORS_LAZY_LOAD"] = "1"
+MODEL_DIR = "DistilGPT2_Model"
+GITHUB_BASE_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model/"
 
-# Load model and tokenizer
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+# Updated required files list for safetensors format
+REQUIRED_FILES = [
+    "config.json",
+    "model.safetensors",
+    "merges.txt",
+    "vocab.json",
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "generation_config.json"
+]
+
+# Download missing files with progress indicators
+for filename in REQUIRED_FILES:
+    file_path = os.path.join(MODEL_DIR, filename)
+    if not os.path.exists(file_path):
+        with st.spinner(f"Downloading {filename}..."):
+            response = requests.get(GITHUB_BASE_URL + filename)
+            with open(file_path, "wb") as f:
+                f.write(response.content)
+
 @st.cache_resource
 def load_model():
-    try:
-        # Verify safetensors file integrity
-        with load_file("DistilGPT2_Model/model.safetensors") as f:
-            if not f.keys():
-                st.error("Invalid or corrupted safetensors file")
-                return None, None
+    """Load model with safetensors support"""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = GPT2LMHeadModel.from_pretrained(
+        MODEL_DIR,
+        use_safetensors=True  # Key change for safetensors format
+    ).to(device)
+    
+    tokenizer = GPT2Tokenizer.from_pretrained(MODEL_DIR)
+    model.eval()
+    return model, tokenizer
 
-        # Load model with safetensors
-        model = GPT2LMHeadModel.from_pretrained(
-            "DistilGPT2_Model",
-            use_safetensors=True,
-            local_files_only=True,
-            device_map="auto",
-            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+model, tokenizer = load_model()
+
+def generate_response(instruction, max_length=256):
+    device = model.device
+    input_text = f"Instruction: {instruction} Response:"
+    
+    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
+    
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            max_length=max_length,
+            num_return_sequences=1,
+            temperature=0.7,
+            top_p=0.95,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
         )
+    
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response_start = response.find("Response:") + len("Response:")
+    return response[response_start:].strip()
 
-        # Load tokenizer from the directory
-        tokenizer = GPT2Tokenizer.from_pretrained(
-            "DistilGPT2_Model",  # Path to the directory containing tokenizer files
-            local_files_only=True
-        )
+# Streamlit interface
+st.set_page_config(page_title="Ticket Support Chatbot", page_icon="🤖")
+st.title("Events Ticketing Support Chatbot")
 
-        # Configure padding token if missing
-        if tokenizer.pad_token is None:
-            tokenizer.pad_token = tokenizer.eos_token
-        model.config.pad_token_id = tokenizer.pad_token_id
+user_input = st.text_input("Ask something about ticketing:", 
+                         placeholder="How do I cancel my ticket?")
 
-        return model, tokenizer
-
-    except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
-        return None, None
-
-# Generate response from the model
-def generate_response(instruction, model, tokenizer, max_length=256):
-    try:
-        device = model.device
-        model.eval()
-
-        # Format input text
-        input_text = f"Instruction: {instruction} Response:"
-        inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-
-        # Generate response
-        with torch.no_grad():
-            outputs = model.generate(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-                max_length=max_length,
-                num_return_sequences=1,
-                temperature=0.7,
-                top_p=0.95,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-            )
-
-        # Decode and extract response
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        response_start = response.find("Response:") + len("Response:")
-        return response[response_start:].strip()
-
-    except Exception as e:
-        return f"Error generating response: {str(e)}"
-
-# Streamlit app
-def main():
-    st.title("Advanced Events Ticketing Chatbot 🤖")
-    st.write("Welcome! Ask me anything about ticket booking, events, or cancellations.")
-
-    # Load model with progress
-    with st.spinner("Loading AI model..."):
-        model, tokenizer = load_model()
-
-    if model is None or tokenizer is None:
-        st.error("Failed to load the model. Please check the model files and try again.")
-        return
-
-    # User input
-    user_input = st.text_input("Ask your question here:")
-
+if st.button("Get Response") or user_input:
     if user_input:
-        # Generate response with loading indicator
-        with st.spinner("Generating answer..."):
-            formatted_input = user_input[0].upper() + user_input[1:]
-            response = generate_response(formatted_input, model, tokenizer)
+        user_query = user_input[0].upper() + user_input[1:]
+        
+        with st.spinner("Generating response..."):
+            response = generate_response(user_query)
+        
+        st.success("Response generated!")
+        st.markdown(f"**User:** {user_query}")
+        st.markdown(f"**Chatbot:** {response}")
+    else:
+        st.warning("Please enter your query first.")
 
-        # Display response
-        st.subheader("Answer:")
-        st.write(response)
-
-if __name__ == "__main__":
-    main()
+st.markdown("---")
+st.markdown("Powered by DistilGPT-2 | Developed by [Your Name]")
