@@ -1,5 +1,5 @@
 import streamlit as st
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import DistilGPT2LMHeadModel, GPT2Tokenizer  # <-- CHANGED TO DistilGPT2
 import torch
 import os
 import requests
@@ -9,7 +9,6 @@ GITHUB_BASE_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketin
 
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-# Updated required files list for safetensors format
 REQUIRED_FILES = [
     "config.json",
     "model.safetensors",
@@ -20,7 +19,7 @@ REQUIRED_FILES = [
     "generation_config.json"
 ]
 
-# Download missing files with progress indicators
+# Download files
 for filename in REQUIRED_FILES:
     file_path = os.path.join(MODEL_DIR, filename)
     if not os.path.exists(file_path):
@@ -31,11 +30,10 @@ for filename in REQUIRED_FILES:
 
 @st.cache_resource
 def load_model():
-    """Load model with safetensors support"""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = GPT2LMHeadModel.from_pretrained(
+    model = DistilGPT2LMHeadModel.from_pretrained(  # <-- CHANGED TO DistilGPT2
         MODEL_DIR,
-        use_safetensors=True  # Key change for safetensors format
+        use_safetensors=True
     ).to(device)
     
     tokenizer = GPT2Tokenizer.from_pretrained(MODEL_DIR)
@@ -43,6 +41,8 @@ def load_model():
     return model, tokenizer
 
 model, tokenizer = load_model()
+
+# ... rest of your code remains the same ...
 
 def generate_response(instruction, max_length=256):
     device = model.device
