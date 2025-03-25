@@ -203,8 +203,7 @@ st.markdown(
     <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
         <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">Disclaimer</h1>
         <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-            This chatbot has been designed to assist users with a variety of ticketing-related inquiries, including event ticket management, cancellation requests, and refund policies. 
-            However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+            This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
         </p>
         <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
             The model has been fine-tuned on the following intents:
