@@ -207,7 +207,7 @@ st.markdown(
             However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
         </p>
         <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-            The available intents include, but are not limited to:
+            The model has been fine-tuned on the following intents:
         </p>
         <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
             <li>Cancel Ticket</li>
@@ -231,6 +231,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
