@@ -201,7 +201,7 @@ st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>
 st.markdown(
     """
     <div style="background-color: #eaf2f8; padding: 20px; border-radius: 10px; color: #0a3d68; border: 1px solid #b0c9e3; font-family: Arial, sans-serif;">
-        <h3 style="font-size: 18px; color: #0a3d68; font-weight: bold;">Important Disclaimer</h3>
+        <h3 style="font-size: 18px; color: #0a3d68; font-weight: bold;">Disclaimer</h3>
         <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
             This chatbot has been designed to assist users with a variety of ticketing-related inquiries, including event ticket management, cancellation requests, and refund policies. 
             However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
@@ -227,13 +227,11 @@ st.markdown(
         <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
             Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
         </p>
-        <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
-            For more complex or personalized issues, we recommend contacting our support team directly via <a href="https://www.support-team.com" style="color: #0a3d68; font-weight: bold;">Customer Support</a>.
-        </p>
     </div>
     """,
     unsafe_allow_html=True
 )
+
 
 st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
