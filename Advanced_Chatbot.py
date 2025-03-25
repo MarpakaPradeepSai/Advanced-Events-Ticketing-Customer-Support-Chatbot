@@ -175,86 +175,138 @@ def generate_response(model, tokenizer, instruction, max_length=256):
             num_return_sequences=1,
             temperature=0.7,
             top_p=0.95,
-            do_sample=True
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
         )
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response_start = response.find("Response:") + len("Response:")
+    return response[response_start:].strip()
 
-# Set up the Streamlit interface
-def main():
-    # Load the spaCy model
-    nlp = load_spacy_model()
+# CSS styling for buttons
+st.markdown(
+    """
+    <style>
+    .stButton>button {
+        background: linear-gradient(90deg, #ff8a00, #e52e71);
+        color: white !important;
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stButton>button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+        color: white !important;
+    }
+    .continue-button {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-    # Load the model and tokenizer
-    model, tokenizer = load_model_and_tokenizer()
-    if model is None or tokenizer is None:
-        return
+# Streamlit UI
+st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-    # Custom CSS for styling
+# Initialize session state for controlling disclaimer visibility
+if "show_chat" not in st.session_state:
+    st.session_state.show_chat = False
+
+# Display Disclaimer and Continue button if chat hasn't started
+if not st.session_state.show_chat:
     st.markdown(
         """
-        <style>
-        /* Button styles */
-        .stButton>button {
-            background: linear-gradient(90deg, #ff8a00, #e52e71);
-            color: white !important;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .stButton>button:hover {
-            transform: scale(1.05);
-            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-            color: white !important;
-        }
-
-        /* Watermark with bot emoji */
-        .watermark {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            z-index: -1;
-            font-size: 5em;
-            opacity: 0.2;
-        }
-
-        /* Additional custom styling */
-        .continue-button {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        </style>
+        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
+            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">Disclaimer</h1>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+            </p>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                The model has been fine-tuned on the following intents:
+            </p>
+            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                <li>Cancel Ticket</li>
+                <li>Buy Ticket</li>
+                <li>Sell Ticket</li>
+                <li>Transfer Ticket</li>
+                <li>Upgrade Ticket</li>
+                <li>Find Ticket</li>
+                <li>Change Personal Details on Ticket</li>
+                <li>Get Refund</li>
+                <li>Find Upcoming Events</li>
+                <li>Customer Service</li>
+                <li>Check Cancellation Fee</li>
+                <li>Track Cancellation</li>
+                <li>Ticket Information</li>
+            </ul>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+            </p>
+        </div>
         """,
         unsafe_allow_html=True
     )
+    
+    # Continue button aligned to the right
+    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    if st.button("Continue", key="continue_button"):
+        st.session_state.show_chat = True
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Add the bot emoji watermark at the bottom-right corner
-    st.markdown(
-        "<div class='watermark'>🤖</div>", 
-        unsafe_allow_html=True
-    )
+# Show chat interface only after clicking Continue
+if st.session_state.show_chat:
+    st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
-    st.title("Advanced Events Ticketing Chatbot")
+    # Initialize spaCy model for NER
+    nlp = load_spacy_model()
 
-    # User input box
-    user_input = st.text_input("Ask a question:")
+    # Load DistilGPT2 model and tokenizer
+    model, tokenizer = load_model_and_tokenizer()
+    if model is None or tokenizer is None:
+        st.error("Failed to load the model.")
+        st.stop()
 
-    if user_input:
-        # Extract dynamic placeholders
-        dynamic_placeholders = extract_dynamic_placeholders(user_input, nlp)
+    # Initialize chat history in session state
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-        # Generate a response based on user input
-        response = generate_response(model, tokenizer, user_input)
-        
-        # Replace placeholders in the response
-        final_response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
-        
-        # Display the chatbot response
-        st.markdown(final_response, unsafe_allow_html=True)
+    # Display chat messages from history
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"], avatar=message["avatar"]):
+            st.markdown(message["content"], unsafe_allow_html=True)
 
-if __name__ == "__main__":
-    main()
+    # Input box at the bottom
+    if prompt := st.chat_input("Enter your question:"):
+        prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
+        if not prompt.strip():
+            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt, unsafe_allow_html=True)
+            with st.chat_message("assistant", avatar="🤖"):
+                st.error("⚠️ Please enter a valid question. You cannot send empty messages.")
+            st.session_state.chat_history.append({"role": "assistant", "content": "Please enter a valid question. You cannot send empty messages.", "avatar": "🤖"})
+        else:
+            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt, unsafe_allow_html=True)
+            with st.chat_message("assistant", avatar="🤖"):
+                with st.spinner("Generating response..."):
+                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                    response = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
+                    st.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+
+    # Conditionally display reset button
+    if st.session_state.chat_history:
+        if st.button("Reset Chat", key="reset_button"):
+            st.session_state.chat_history = []
+            st.rerun()
