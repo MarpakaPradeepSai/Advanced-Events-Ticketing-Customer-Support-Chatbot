@@ -200,9 +200,16 @@ st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>
 # Disclaimer message
 st.markdown(
     """
-    <div style="background-color: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;">
-        <strong>Disclaimer:</strong> Due to computational constraints, this model has been fine-tuned on a limited set of intents. The available intents are:
-        <ul>
+    <div style="background-color: #eaf2f8; padding: 20px; border-radius: 10px; color: #0a3d68; border: 1px solid #b0c9e3; font-family: Arial, sans-serif;">
+        <h3 style="font-size: 18px; color: #0a3d68; font-weight: bold;">Important Disclaimer</h3>
+        <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
+            This chatbot has been designed to assist users with a variety of ticketing-related inquiries, including event ticket management, cancellation requests, and refund policies. 
+            However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
+            The available intents include, but are not limited to:
+        </p>
+        <ul style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
             <li>Cancel Ticket</li>
             <li>Buy Ticket</li>
             <li>Sell Ticket</li>
@@ -215,9 +222,14 @@ st.markdown(
             <li>Customer Service</li>
             <li>Check Cancellation Fee</li>
             <li>Track Cancellation</li>
-            <li>Information About Tickets</li>
+            <li>Ticket Information</li>
         </ul>
-        Please note that this model might not handle all queries outside these intents.
+        <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
+            Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; color: #4b6b8f;">
+            For more complex or personalized issues, we recommend contacting our support team directly via <a href="https://www.support-team.com" style="color: #0a3d68; font-weight: bold;">Customer Support</a>.
+        </p>
     </div>
     """,
     unsafe_allow_html=True
