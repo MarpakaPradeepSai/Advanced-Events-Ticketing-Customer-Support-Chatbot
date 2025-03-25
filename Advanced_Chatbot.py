@@ -227,8 +227,33 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Add the "Continue" button
-if st.button("Continue"):
+# Add the "Continue" button (right-aligned)
+st.markdown(
+    """
+    <style>
+    .stButton>button {
+        background: linear-gradient(90deg, #ff8a00, #e52e71);
+        color: white !important;
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stButton>button:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+        color: white !important;
+    }
+    .stButton>button:focus {
+        outline: none;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+if st.button("Continue", key="continue_button"):
     # Initialize chat history in session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
