@@ -170,7 +170,9 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    inputs = tokenizer(instruction, return_tensors="pt").to(device)
+    input_text = f"Instruction: {instruction} Response:"
+
+    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
 
     with torch.no_grad():
         outputs = model.generate(
@@ -191,61 +193,56 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# If the user has not clicked Continue
-if "continue_clicked" not in st.session_state or not st.session_state.continue_clicked:
-    # Disclaimer message
-    st.markdown(
-        """
-        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
-            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">Disclaimer</h1>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
-            </p>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                The model has been fine-tuned on the following intents:
-            </p>
-            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                <li>Cancel Ticket</li>
-                <li>Buy Ticket</li>
-                <li>Sell Ticket</li>
-                <li>Transfer Ticket</li>
-                <li>Upgrade Ticket</li>
-                <li>Find Ticket</li>
-                <li>Change Personal Details on Ticket</li>
-                <li>Get Refund</li>
-                <li>Find Upcoming Events</li>
-                <li>Customer Service</li>
-                <li>Check Cancellation Fee</li>
-                <li>Track Cancellation</li>
-                <li>Ticket Information</li>
-            </ul>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+# Disclaimer message
+st.markdown(
+    """
+    <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
+        <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">Disclaimer</h1>
+        <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+        </p>
+        <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            The model has been fine-tuned on the following intents:
+        </p>
+        <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            <li>Cancel Ticket</li>
+            <li>Buy Ticket</li>
+            <li>Sell Ticket</li>
+            <li>Transfer Ticket</li>
+            <li>Upgrade Ticket</li>
+            <li>Find Ticket</li>
+            <li>Change Personal Details on Ticket</li>
+            <li>Get Refund</li>
+            <li>Find Upcoming Events</li>
+            <li>Customer Service</li>
+            <li>Check Cancellation Fee</li>
+            <li>Track Cancellation</li>
+            <li>Ticket Information</li>
+        </ul>
+        <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-    # Add the "Continue" button
-    if st.button("Continue"):
-        st.session_state.continue_clicked = True
-        st.experimental_rerun()
-
-else:
-    # The chatbot UI and logic after the user clicks Continue
-    st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
-    
-    # Add your chatbot logic and history display here
+# Add the "Continue" button
+if st.button("Continue"):
+    # Initialize chat history in session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    # Initialize spaCy model for NER
     nlp = load_spacy_model()
+
+    # Load DistilGPT2 model and tokenizer
     model, tokenizer = load_model_and_tokenizer()
-    
     if model is None or tokenizer is None:
         st.error("Failed to load the model.")
         st.stop()
+
+    st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
     # Display chat history
     for message in st.session_state.chat_history:
@@ -283,7 +280,30 @@ else:
 
     # Conditionally display reset button
     if st.session_state.chat_history:
+        st.markdown(
+            """
+            <style>
+            .stButton>button {
+                background: linear-gradient(90deg, #ff8a00, #e52e71);
+                color: white !important;
+                border: none;
+                border-radius: 25px;
+                padding: 10px 20px;
+                font-size: 1.2em;
+                font-weight: bold;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .stButton>button:hover {
+                transform: scale(1.05);
+                box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+                color: white !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
-            st.session_state.continue_clicked = False
-            st.experimental_rerun()
+            st.rerun()
+s
