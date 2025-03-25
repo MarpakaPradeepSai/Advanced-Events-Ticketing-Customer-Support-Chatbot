@@ -133,7 +133,6 @@ static_placeholders = {
     "{{CONNECT_WITH_ORGANIZER}}": "<b>Connect with Organizer</b>",
     "{{TICKETS_TAB}}": "<b>Tickets</b>",
     "{{ASSISTANCE_SECTION}}": "<b>Assistance Section</b>",
-
 }
 
 # Function to replace placeholders
@@ -197,6 +196,33 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
+
+# Disclaimer message
+st.markdown(
+    """
+    <div style="background-color: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24; border: 1px solid #f5c6cb;">
+        <strong>Disclaimer:</strong> Due to computational constraints, this model has been fine-tuned on a limited set of intents. The available intents are:
+        <ul>
+            <li>Cancel Ticket</li>
+            <li>Buy Ticket</li>
+            <li>Sell Ticket</li>
+            <li>Transfer Ticket</li>
+            <li>Upgrade Ticket</li>
+            <li>Find Ticket</li>
+            <li>Change Personal Details on Ticket</li>
+            <li>Get Refund</li>
+            <li>Find Upcoming Events</li>
+            <li>Customer Service</li>
+            <li>Check Cancellation Fee</li>
+            <li>Track Cancellation</li>
+            <li>Information About Tickets</li>
+        </ul>
+        Please note that this model might not handle all queries outside these intents.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
 # Initialize spaCy model for NER
