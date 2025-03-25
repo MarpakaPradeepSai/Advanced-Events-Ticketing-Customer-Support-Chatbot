@@ -306,4 +306,3 @@ if st.button("Continue"):
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
             st.rerun()
-s
