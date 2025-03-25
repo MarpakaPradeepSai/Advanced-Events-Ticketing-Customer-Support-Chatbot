@@ -182,7 +182,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# CSS styling for buttons and watermark
+# CSS styling for buttons
 st.markdown(
     """
     <style>
@@ -207,24 +207,7 @@ st.markdown(
         justify-content: flex-end;
         margin-top: 20px;
     }
-    .watermark {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        font-size: 100px;
-        opacity: 0.1;
-        pointer-events: none;
-        z-index: 0;
-    }
     </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Add the watermark emoji
-st.markdown(
-    """
-    <div class="watermark">🤖</div>
     """,
     unsafe_allow_html=True
 )
