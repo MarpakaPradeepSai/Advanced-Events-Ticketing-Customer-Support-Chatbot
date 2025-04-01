@@ -298,7 +298,7 @@ if not st.session_state.show_chat:
                 This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
             </p>
             <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                The model has been fine-tuned on the following intents:
+                The chatbot is optimized to handle the following intents:
             </p>
             <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
                 <li>Cancel Ticket</li>
