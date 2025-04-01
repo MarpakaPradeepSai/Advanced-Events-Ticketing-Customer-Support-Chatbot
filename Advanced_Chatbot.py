@@ -8,7 +8,6 @@ import time
 
 # GitHub directory containing the DistilGPT2 model files
 GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
-
 # List of model files to download
 MODEL_FILES = [
     "config.json",
@@ -23,11 +22,9 @@ MODEL_FILES = [
 # Function to download model files from GitHub
 def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     os.makedirs(model_dir, exist_ok=True)
-
     for filename in MODEL_FILES:
         url = f"{GITHUB_MODEL_URL}/{filename}"
         local_path = os.path.join(model_dir, filename)
-
         if not os.path.exists(local_path):
             response = requests.get(url)
             if response.status_code == 200:
@@ -51,7 +48,6 @@ def load_model_and_tokenizer():
     if not download_model_files(model_dir):
         st.error("Model download failed. Check your internet connection or GitHub URL.")
         return None, None
-
     model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
     tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
     return model, tokenizer
@@ -212,12 +208,10 @@ st.markdown(
 .stButton>button:active {
     transform: scale(0.98); /* Slightly smaller when clicked */
 }
-
 /* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
-
 /* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
@@ -237,7 +231,11 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
+/* Align Continue button to the right */
+.continue-button-container {
+    text-align: right;
+    margin-top: 15px;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -322,9 +320,8 @@ if not st.session_state.show_chat:
         """,
         unsafe_allow_html=True
     )
-
     # Continue button aligned to the right
-    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
         st.rerun()
@@ -333,7 +330,6 @@ if not st.session_state.show_chat:
 # Show chat interface only after clicking Continue
 if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
-
     # Dropdown and Button section at the TOP, before chat history and input
     selected_query = st.selectbox(
         "Choose a query from examples:",
@@ -366,7 +362,6 @@ if st.session_state.show_chat:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-
     # Process selected query from dropdown
     if process_query_button:
         if selected_query == "Choose your question":
@@ -374,14 +369,12 @@ if st.session_state.show_chat:
         elif selected_query:
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
-
             st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
             with st.chat_message("user", avatar="👤"):
                 st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
             last_role = "user"
-
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
@@ -390,11 +383,9 @@ if st.session_state.show_chat:
                     response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     # time.sleep(1) # Optional delay
-
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
-
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
@@ -408,7 +399,6 @@ if st.session_state.show_chat:
             with st.chat_message("user", avatar="👤"):
                 st.markdown(prompt, unsafe_allow_html=True)
             last_role = "user"
-
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
@@ -417,7 +407,6 @@ if st.session_state.show_chat:
                     response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     # time.sleep(1) # Optional delay
-
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -428,4 +417,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
