@@ -336,6 +336,15 @@ if not st.session_state.show_chat:
 if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
+    # Dropdown and Button section at the TOP, before chat history and input
+    selected_query = st.selectbox(
+        "Choose a query from examples:",
+        ["Choose your question"] + example_queries,
+        key="query_selectbox",
+        label_visibility="collapsed"
+    )
+    process_query_button = st.button("Ask this question", key="query_button")
+
     # Initialize spaCy model for NER
     nlp = load_spacy_model()
 
@@ -359,14 +368,6 @@ if st.session_state.show_chat:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-    # Dropdown and Button section
-    selected_query = st.selectbox(
-        "Choose a query from examples:",
-        ["Choose your question"] + example_queries,
-        key="query_selectbox",
-        label_visibility="collapsed"
-    )
-    process_query_button = st.button("Ask this question", key="query_button")
 
     # Process selected query from dropdown
     if process_query_button:
