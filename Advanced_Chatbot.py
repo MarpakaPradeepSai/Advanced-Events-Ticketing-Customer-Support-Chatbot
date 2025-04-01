@@ -182,42 +182,43 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# Enhanced CSS styling
+# CSS styling
 st.markdown(
     """
 <style>
-/* General Button Styling (remains the same) */
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71);
-    color: white !important;
+    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
+    color: white !important; /* Ensure text is white */
     border: none;
-    border-radius: 25px;
-    padding: 10px 20px;
-    font-size: 1.2em;
-    font-weight: bold;
+    border-radius: 25px; /* Rounded corners */
+    padding: 10px 20px; /* Padding */
+    font-size: 1.2em; /* Font size */
+    font-weight: bold; /* Bold text */
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    display: inline-flex;
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
+    display: inline-flex; /* Helps with alignment */
     align-items: center;
     justify-content: center;
-    margin-top: 5px;
-    width: auto;
-    min-width: 100px;
-    font-family: 'Times New Roman', Times, serif !important;
+    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
+    width: auto; /* Fit content width */
+    min-width: 100px; /* Optional: ensure a minimum width */
+    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
 }
 .stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-    color: white !important;
+    transform: scale(1.05); /* Slightly larger on hover */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
+    color: white !important; /* Ensure text stays white on hover */
 }
 .stButton>button:active {
-    transform: scale(0.98);
+    transform: scale(0.98); /* Slightly smaller when clicked */
 }
 
-/* Font Styling (remains the same) */
+/* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
+/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
@@ -230,90 +231,39 @@ st.markdown(
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms {
+.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent {
+.streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* "Ask this question" Button (remains the same) */
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Custom CSS for the "Ask this question" button
+st.markdown(
+    """
+<style>
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6);
+    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
     color: white !important;
 }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
 
-/* Horizontal Line Separator (remains the same) */
-.horizontal-line {
-    border-top: 2px solid #e0e0e0;
-    margin: 15px 0;
-}
-
-/* Enhanced Disclaimer Expander Styling */
-.streamlit-expanderHeader {
-    background-color: #fffaf0; /* Light beige background for expander header */
-    border: 1px solid #f0ad4e; /* Muted orange border for expander header */
-    border-radius: 8px 8px 0 0; /* Rounded top corners for expander header */
-    padding: 10px;
-    font-weight: bold;
-    color: #721c24; /* Dark red-brown text color */
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderHeader:hover {
-    background-color: #fff0e0; /* Slightly lighter beige on hover */
-}
-.streamlit-expanderContent {
-    background-color: #fffde7; /* Very light yellow background for disclaimer content */
-    border: 1px solid #f0ad4e; /* Muted orange border for disclaimer content */
-    border-radius: 0 0 8px 8px; /* Rounded bottom corners for disclaimer content */
-    padding: 20px;
-    color: #5a1319; /* Darker red-brown text color for content */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow for disclaimer content */
-    margin-top: 0 !important; /* Remove default top margin */
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderContent h1 {
-    font-size: 32px; /* Larger heading */
-    color: #721c24;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 15px;
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderContent p {
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 10px;
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderContent ul {
-    list-style-type: square; /* Square bullet points */
-    padding-left: 25px;
-    margin-bottom: 10px;
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderContent li {
-    font-size: 16px;
-    line-height: 1.6;
-    font-family: 'Times New Roman', Times, serif !important;
-}
-
-/* Continue Button Styling within Disclaimer Section */
-.continue-button {
-    display: flex;
-    justify-content: flex-end; /* Align to the right */
-    margin-top: 10px; /* Add some space above the button */
-    margin-bottom: 15px; /* Add some space below the button */
-}
-.continue-button .stButton>button {
-    background: linear-gradient(90deg, #4CAF50, #8BC34A); /* Green gradient for Continue button */
-    color: white !important;
-}
-.continue-button .stButton>button:hover {
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.4); /* Slightly stronger shadow on hover for Continue button */
-}
-
-
+# Custom CSS for horizontal line separator
+st.markdown(
+    """
+<style>
+    .horizontal-line {
+        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+        margin: 15px 0; /* Adjust spacing above and below the line */
+    }
 </style>
     """,
     unsafe_allow_html=True,
@@ -333,48 +283,47 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
 
 # Display Disclaimer and Continue button if chat hasn't started
 if not st.session_state.show_chat:
-    with st.expander("⚠️ View Disclaimer"):  # Added warning icon to expander label
-        st.markdown(
-            """
-            <div style="font-family: Arial, sans-serif;"> {/* Removed inline style here, styles are in CSS now */}
-                <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1> {/* Heading style now in CSS, but kept inline for markdown h1*/}
-                <p>
-                    This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
-                </p>
-                <p>
-                    The model has been fine-tuned on the following intents:
-                </p>
-                <ul>
-                    <li>Cancel Ticket</li>
-                    <li>Buy Ticket</li>
-                    <li>Sell Ticket</li>
-                    <li>Transfer Ticket</li>
-                    <li>Upgrade Ticket</li>
-                    <li>Find Ticket</li>
-                    <li>Change Personal Details on Ticket</li>
-                    <li>Get Refund</li>
-                    <li>Find Upcoming Events</li>
-                    <li>Customer Service</li>
-                    <li>Check Cancellation Fee</li>
-                    <li>Track Cancellation</li>
-                    <li>Ticket Information</li>
-                </ul>
-                <p>
-                    Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    st.markdown(
+        """
+        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
+            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+            </p>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                The model has been fine-tuned on the following intents:
+            </p>
+            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                <li>Cancel Ticket</li>
+                <li>Buy Ticket</li>
+                <li>Sell Ticket</li>
+                <li>Transfer Ticket</li>
+                <li>Upgrade Ticket</li>
+                <li>Find Ticket</li>
+                <li>Change Personal Details on Ticket</li>
+                <li>Get Refund</li>
+                <li>Find Upcoming Events</li>
+                <li>Customer Service</li>
+                <li>Check Cancellation Fee</li>
+                <li>Track Cancellation</li>
+                <li>Ticket Information</li>
+            </ul>
+            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # Continue button aligned to the right, outside the expander
+    # Continue button aligned to the right
     st.markdown('<div class="continue-button">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
@@ -479,3 +428,5 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
+
+
