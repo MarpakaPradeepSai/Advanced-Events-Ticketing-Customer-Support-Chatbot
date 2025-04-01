@@ -182,34 +182,91 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# CSS styling for buttons
+# CSS styling
 st.markdown(
     """
-    <style>
-    .stButton>button {
-        background: linear-gradient(90deg, #ff8a00, #e52e71);
-        color: white !important;
-        border: none;
-        border-radius: 25px;
-        padding: 10px 20px;
-        font-size: 1.2em;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .stButton>button:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-        color: white !important;
-    }
-    .continue-button {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 20px;
-    }
-    </style>
+<style>
+.stButton>button {
+    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
+    color: white !important; /* Ensure text is white */
+    border: none;
+    border-radius: 25px; /* Rounded corners */
+    padding: 10px 20px; /* Padding */
+    font-size: 1.2em; /* Font size */
+    font-weight: bold; /* Bold text */
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
+    display: inline-flex; /* Helps with alignment */
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
+    width: auto; /* Fit content width */
+    min-width: 100px; /* Optional: ensure a minimum width */
+    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
+}
+.stButton>button:hover {
+    transform: scale(1.05); /* Slightly larger on hover */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
+    color: white !important; /* Ensure text stays white on hover */
+}
+.stButton>button:active {
+    transform: scale(0.98); /* Slightly smaller when clicked */
+}
+
+/* Apply Times New Roman to all text elements */
+* {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
+.stSelectbox > div > div > div > div {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+.stTextInput > div > div > input {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+.stTextArea > div > div > textarea {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+.stChatMessage {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
+    font-family: 'Times New Roman', Times, serif !important;
+}
+.streamlit-expanderContent { /* For text inside expanders if used */
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+</style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
+)
+
+# Custom CSS for the "Ask this question" button
+st.markdown(
+    """
+<style>
+div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
+    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    color: white !important;
+}
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Custom CSS for horizontal line separator
+st.markdown(
+    """
+<style>
+    .horizontal-line {
+        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+        margin: 15px 0; /* Adjust spacing above and below the line */
+    }
+</style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # Streamlit UI
@@ -218,6 +275,20 @@ st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>
 # Initialize session state for controlling disclaimer visibility
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
+
+# Example queries for dropdown
+example_queries = [
+    "How do I buy a ticket?",
+    "What is the cancellation policy?",
+    "I want to get a refund for my ticket.",
+    "How can I change my ticket details?",
+    "Tell me about upcoming events in London.",
+    "How to contact customer service?",
+    "What payment methods are accepted?",
+    "I need to report a payment issue.",
+    "Can I sell my ticket?",
+    "How to track my refund?",
+]
 
 # Display Disclaimer and Continue button if chat hasn't started
 if not st.session_state.show_chat:
@@ -253,7 +324,7 @@ if not st.session_state.show_chat:
         """,
         unsafe_allow_html=True
     )
-    
+
     # Continue button aligned to the right
     st.markdown('<div class="continue-button">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
@@ -278,35 +349,83 @@ if st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
+    last_role = None # Track last message role
+
     # Display chat messages from history
     for message in st.session_state.chat_history:
+        if message["role"] == "user" and last_role == "assistant":
+            st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
+        last_role = message["role"]
+
+    # Dropdown and Button section
+    selected_query = st.selectbox(
+        "Choose a query from examples:",
+        ["Choose your question"] + example_queries,
+        key="query_selectbox",
+        label_visibility="collapsed"
+    )
+    process_query_button = st.button("Ask this question", key="query_button")
+
+    # Process selected query from dropdown
+    if process_query_button:
+        if selected_query == "Choose your question":
+            st.error("⚠️ Please select your question from the dropdown.")
+        elif selected_query:
+            prompt_from_dropdown = selected_query
+            prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
+
+            st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
+            if last_role == "assistant":
+                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
+            last_role = "user"
+
+            with st.chat_message("assistant", avatar="🤖"):
+                message_placeholder = st.empty()
+                generating_response_text = "Generating response..."
+                with st.spinner(generating_response_text):
+                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
+
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+            last_role = "assistant"
+
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
-            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt, unsafe_allow_html=True)
-            with st.chat_message("assistant", avatar="🤖"):
-                st.error("⚠️ Please enter a valid question. You cannot send empty messages.")
-            st.session_state.chat_history.append({"role": "assistant", "content": "Please enter a valid question. You cannot send empty messages.", "avatar": "🤖"})
+            st.toast("⚠️ Please enter a question.", icon="⚠️")
         else:
             st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
+            if last_role == "assistant":
+                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
             with st.chat_message("user", avatar="👤"):
                 st.markdown(prompt, unsafe_allow_html=True)
+            last_role = "user"
+
             with st.chat_message("assistant", avatar="🤖"):
-                with st.spinner("Generating response..."):
+                message_placeholder = st.empty()
+                generating_response_text = "Generating response..."
+                with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response = generate_response(model, tokenizer, prompt)
-                    full_response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
-                    st.markdown(full_response, unsafe_allow_html=True)
+                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
+
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+            last_role = "assistant"
 
     # Conditionally display reset button
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
+            last_role = None
             st.rerun()
