@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
@@ -23,38 +24,88 @@ MODEL_FILES = [
 # Function to download model files from GitHub
 def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     os.makedirs(model_dir, exist_ok=True)
+    download_successful = True # Flag to track download status
+    progress_bar = st.progress(0)
+    status_text = st.empty()
 
-    for filename in MODEL_FILES:
+    for i, filename in enumerate(MODEL_FILES):
         url = f"{GITHUB_MODEL_URL}/{filename}"
         local_path = os.path.join(model_dir, filename)
+        status_text.text(f"Downloading {filename}...")
 
         if not os.path.exists(local_path):
-            response = requests.get(url)
-            if response.status_code == 200:
+            try:
+                response = requests.get(url, stream=True)
+                response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
+                total_size = int(response.headers.get('content-length', 0))
+                block_size = 1024 # 1 Kibibyte
+                downloaded_size = 0
+
                 with open(local_path, "wb") as f:
-                    f.write(response.content)
-            else:
-                st.error(f"Failed to download {filename} from GitHub.")
-                return False
-    return True
+                    for data in response.iter_content(block_size):
+                        f.write(data)
+                        downloaded_size += len(data)
+                        # Optional: Update progress more granularly if needed
+                        # progress = min(1.0, downloaded_size / total_size) if total_size > 0 else 0
+                        # status_text.text(f"Downloading {filename}: {int(progress * 100)}%")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Failed to download {filename} from {url}. Error: {e}")
+                download_successful = False
+                if os.path.exists(local_path): # Clean up partially downloaded file
+                    os.remove(local_path)
+                break # Stop downloading if one file fails
+            except Exception as e:
+                st.error(f"An error occurred while saving {filename}: {e}")
+                download_successful = False
+                if os.path.exists(local_path):
+                     os.remove(local_path)
+                break
+        else:
+             status_text.text(f"{filename} already exists. Skipping.")
+
+        # Update overall progress bar
+        progress_bar.progress((i + 1) / len(MODEL_FILES))
+
+    if download_successful:
+        status_text.text("Model files downloaded successfully!")
+        time.sleep(1) # Give user time to read success message
+    else:
+        status_text.error("Model download failed. Please check logs and try again.")
+
+    status_text.empty() # Clear status text
+    progress_bar.empty() # Clear progress bar
+    return download_successful
+
 
 # Load spaCy model for NER
-@st.cache_resource
+# Use st.cache_data for models that don't change often
+@st.cache_data
 def load_spacy_model():
-    nlp = spacy.load("en_core_web_trf")
+    try:
+        nlp = spacy.load("en_core_web_trf")
+    except OSError:
+        st.warning("Downloading spaCy model 'en_core_web_trf'...")
+        spacy.cli.download("en_core_web_trf")
+        nlp = spacy.load("en_core_web_trf")
     return nlp
 
 # Load the DistilGPT2 model and tokenizer
-@st.cache_resource(show_spinner=False)
+# Use st.cache_resource for resources like models/tokenizers
+@st.cache_resource(show_spinner="Loading AI Model...") # Improved spinner message
 def load_model_and_tokenizer():
     model_dir = "/tmp/DistilGPT2_Model"
     if not download_model_files(model_dir):
-        st.error("Model download failed. Check your internet connection or GitHub URL.")
+        st.error("Model download failed. Cannot load model. Check your internet connection or GitHub URL.")
+        return None, None
+    try:
+        model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
+        tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+        return model, tokenizer
+    except Exception as e:
+        st.error(f"Error loading model/tokenizer from {model_dir}: {e}")
+        st.error("The downloaded model files might be corrupted or incompatible. Try deleting the '/tmp/DistilGPT2_Model' directory and restarting.")
         return None, None
 
-    model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
-    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
-    return model, tokenizer
 
 # Define static placeholders
 static_placeholders = {
@@ -108,7 +159,7 @@ static_placeholders = {
     "{{SEARCH_BUTTON}}": "<b>Search</b>",
     "{{SELL_TICKET_OPTION}}": "<b>Sell Ticket</b>",
     "{{SEND_BUTTON}}": "<b>Send</b>",
-    "{{SUPPORT_ SECTION}}": "<b>Support</b>",
+    "{{SUPPORT_ SECTION}}": "<b>Support</b>", # Note: Space before SECTION might be intentional or a typo
     "{{SUPPORT_CONTACT_LINK}}": "www.support-team.com",
     "{{SUPPORT_SECTION}}": "<b>Support</b>",
     "{{SUPPORT_TEAM_LINK}}": "www.support-team.com",
@@ -137,174 +188,241 @@ static_placeholders = {
 
 # Function to replace placeholders
 def replace_placeholders(response, dynamic_placeholders, static_placeholders):
+    # Replace static placeholders first
     for placeholder, value in static_placeholders.items():
         response = response.replace(placeholder, value)
+    # Replace dynamic placeholders next
     for placeholder, value in dynamic_placeholders.items():
         response = response.replace(placeholder, value)
     return response
 
 # Function to extract dynamic placeholders using SpaCy
 def extract_dynamic_placeholders(user_question, nlp):
+    if nlp is None: # Add check in case spaCy model failed to load
+        st.warning("SpaCy model not loaded. Cannot extract dynamic entities.")
+        return {'{{EVENT}}': "event", '{{CITY}}': "city"} # Return defaults
+
     doc = nlp(user_question)
     dynamic_placeholders = {}
+    # Use a flag to track if a specific entity type was found
+    event_found = False
+    city_found = False
+
     for ent in doc.ents:
+        # Prioritize more specific labels if available (like EVENT over GPE for multi-word entities)
         if ent.label_ == "EVENT":
             event_text = ent.text.title()
             dynamic_placeholders['{{EVENT}}'] = f"<b>{event_text}</b>"
-        elif ent.label_ == "GPE":
+            event_found = True
+        elif ent.label_ == "GPE" and not city_found: # GPE (Geopolitical Entity) often includes cities
             city_text = ent.text.title()
             dynamic_placeholders['{{CITY}}'] = f"<b>{city_text}</b>"
-    if '{{EVENT}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{EVENT}}'] = "event"
-    if '{{CITY}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{CITY}}'] = "city"
+            city_found = True
+        # Add more entity types if needed (e.g., DATE, TIME, ORG)
+        # elif ent.label_ == "DATE":
+        #     dynamic_placeholders['{{DATE}}'] = f"<b>{ent.text}</b>"
+
+    # Set default values only if the specific entity wasn't found
+    if not event_found:
+        dynamic_placeholders['{{EVENT}}'] = "event" # Default placeholder text
+    if not city_found:
+        dynamic_placeholders['{{CITY}}'] = "city" # Default placeholder text
+
     return dynamic_placeholders
+
 
 # Generate a chatbot response using DistilGPT2
 def generate_response(model, tokenizer, instruction, max_length=256):
+    if model is None or tokenizer is None:
+        return "Sorry, the AI model is not available right now."
+
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+
+    # Format the input consistently
     input_text = f"Instruction: {instruction} Response:"
-    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-    with torch.no_grad():
-        outputs = model.generate(
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_length=max_length,
-            num_return_sequences=1,
-            temperature=0.7,
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response_start = response.find("Response:") + len("Response:")
-    return response[response_start:].strip()
+    try:
+        inputs = tokenizer(input_text, return_tensors="pt", padding=True, truncation=True, max_length=tokenizer.model_max_length).to(device) # Added truncation
+
+        with torch.no_grad():
+            outputs = model.generate(
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs["attention_mask"],
+                max_length=max_length,             # Max length of the *generated* sequence
+                num_return_sequences=1,
+                temperature=0.7,                   # Controls randomness (lower = more deterministic)
+                top_p=0.95,                        # Nucleus sampling (considers top p% probability mass)
+                do_sample=True,                    # Enable sampling
+                pad_token_id=tokenizer.eos_token_id # Prevent generation beyond EOS
+            )
+
+        # Decode the generated part only
+        response = tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True) # Decode only new tokens
+        return response.strip()
+
+    except Exception as e:
+        st.error(f"Error during response generation: {e}")
+        return "Sorry, I encountered an error while generating the response."
+
+
+# --- Streamlit UI Setup ---
+
+st.set_page_config(layout="wide") # Use wider layout
 
 # CSS styling
 st.markdown(
     """
 <style>
+/* General Button Styling */
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
-    color: white !important; /* Ensure text is white */
+    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Default gradient for most buttons */
+    color: white !important;
     border: none;
-    border-radius: 25px; /* Rounded corners */
-    padding: 10px 20px; /* Padding */
-    font-size: 1.2em; /* Font size */
-    font-weight: bold; /* Bold text */
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 1.1em; /* Slightly smaller for better fit */
+    font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
-    display: inline-flex; /* Helps with alignment */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
-    width: auto; /* Fit content width */
-    min-width: 100px; /* Optional: ensure a minimum width */
-    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
+    margin-top: 10px; /* Increased margin */
+    margin-bottom: 10px; /* Added margin */
+    width: auto;
+    min-width: 120px; /* Adjusted min-width */
+    font-family: 'Times New Roman', Times, serif !important;
 }
 .stButton>button:hover {
-    transform: scale(1.05); /* Slightly larger on hover */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
-    color: white !important; /* Ensure text stays white on hover */
+    transform: scale(1.05);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    color: white !important;
 }
 .stButton>button:active {
-    transform: scale(0.98); /* Slightly smaller when clicked */
+    transform: scale(0.98);
 }
+
+/* Specific Styling for 'Ask this question' Button */
+/* Targets the button within the horizontal block likely containing the selectbox */
+div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button {
+    background: linear-gradient(90deg, #29ABE2, #0077B6) !important; /* Ensure override */
+    color: white !important;
+    font-size: 1.0em; /* Match selectbox better */
+    padding: 8px 18px; /* Adjust padding */
+    min-width: 150px; /* Ensure it fits text */
+    margin-top: 0px; /* Align with selectbox */
+    margin-bottom: 0px;
+}
+
+/* Styling for the 'Reset Chat' Button */
+/* Target button specifically by key or position if possible, otherwise general .stButton applies */
+/* If Reset button needs unique style, give it a specific class or use nth-of-type if layout is stable */
+
 
 /* Apply Times New Roman to all text elements */
-* {
+body, .stApp * {
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
-.stSelectbox > div > div > div > div {
+/* Ensure selectbox text uses the font */
+.stSelectbox div[data-baseweb="select"] > div {
+     font-family: 'Times New Roman', Times, serif !important;
+}
+/* Ensure text input/area uses the font */
+.stTextInput input, .stTextArea textarea {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.stTextInput > div > div > input {
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.stTextArea > div > div > textarea {
-    font-family: 'Times New Roman', Times, serif !important;
-}
+/* Ensure chat message content uses the font */
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
+/* Ensure error/warning messages use the font */
+.stAlert { /* More general class for alerts */
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent { /* For text inside expanders if used */
-    font-family: 'Times New Roman', Times, serif !important;
+
+/* Horizontal Line Separator */
+.horizontal-line {
+    border-top: 2px solid #e0e0e0;
+    margin: 20px 0; /* Increased spacing */
 }
-.continue-button {
-    text-align: right; /* Align the content (button) to the right */
-    margin-top: 10px; /* Add some space above the button */
+
+/* Disclaimer Box Styling */
+.disclaimer-box {
+    background-color: #f8d7da;
+    padding: 25px; /* Increased padding */
+    border-radius: 10px;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    margin-bottom: 20px; /* Space below disclaimer */
 }
+.disclaimer-box h1 {
+    font-size: 32px; /* Adjusted size */
+    color: #721c24;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 15px;
+}
+.disclaimer-box p, .disclaimer-box ul {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #721c24;
+}
+.disclaimer-box ul {
+    margin-left: 20px; /* Indent list */
+    list-style-type: disc; /* Use standard bullets */
+}
+
+/* Container for the Continue Button */
+.continue-button-container {
+    text-align: right; /* Align content (the button) to the right */
+    width: 100%; /* Ensure the container spans the width */
+    margin-top: 15px; /* Add some space above the button */
+}
+/* Specific styling for the Continue button if needed (inherits .stButton>button) */
+.continue-button-container .stButton>button {
+     background: linear-gradient(90deg, #28a745, #218838); /* Green gradient for Continue */
+     min-width: 130px;
+}
+
 
 </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Custom CSS for the "Ask this question" button
-st.markdown(
-    """
-<style>
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
-    color: white !important;
-}
-</style>
-    """,
-    unsafe_allow_html=True,
-)
 
-# Custom CSS for horizontal line separator
-st.markdown(
-    """
-<style>
-    .horizontal-line {
-        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-        margin: 15px 0; /* Adjust spacing above and below the line */
-    }
-</style>
-    """,
-    unsafe_allow_html=True,
-)
+# --- Main App Logic ---
 
-# Streamlit UI
-st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='font-size: 40px; text-align: center; margin-bottom: 20px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility
+# Initialize session state
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
+if "nlp_model" not in st.session_state:
+    st.session_state.nlp_model = None
+if "llm_model" not in st.session_state:
+    st.session_state.llm_model = None
+if "tokenizer" not in st.session_state:
+    st.session_state.tokenizer = None
 
-# Example queries for dropdown
-example_queries = [
-    "How do I buy a ticket?",
-    "How can I upgrade my ticket for the upcoming event in Hyderabad?",
-    "How do I change my personal details on my ticket?",
-    "How can I find details about upcoming events?",
-    "How do I contact customer service?",
-    "How do I get a refund?",
-    "What is the ticket cancellation fee?",
-    "Can I sell my ticket?"
-]
 
-# Display Disclaimer and Continue button if chat hasn't started
+# --- Disclaimer Section ---
 if not st.session_state.show_chat:
     st.markdown(
         """
-        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
-            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                This <b>Chatbot</b> has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+        <div class="disclaimer-box">
+            <h1>⚠️ Disclaimer</h1>
+            <p>
+                This <b>Chatbot</b> has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents and may not be able to respond accurately to all types of queries.
             </p>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            <p>
                 The chatbot is optimized to handle the following intents:
             </p>
-            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            <ul>
                 <li>Cancel Ticket</li>
                 <li>Buy Ticket</li>
                 <li>Sell Ticket</li>
@@ -319,7 +437,7 @@ if not st.session_state.show_chat:
                 <li>Track Cancellation</li>
                 <li>Ticket Information</li>
             </ul>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+            <p>
                 Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
             </p>
         </div>
@@ -327,108 +445,163 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right
-    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    # Continue button aligned to the right using the container div
+    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
-        st.session_state.show_chat = True
-        st.rerun()
+        # Load models only when user clicks continue
+        with st.spinner("Initializing models, please wait..."):
+            st.session_state.nlp_model = load_spacy_model()
+            st.session_state.llm_model, st.session_state.tokenizer = load_model_and_tokenizer()
+
+        if st.session_state.llm_model and st.session_state.tokenizer and st.session_state.nlp_model:
+            st.session_state.show_chat = True
+            st.rerun() # Rerun to hide disclaimer and show chat
+        else:
+            st.error("Failed to initialize necessary models. Cannot continue.")
+            # Keep show_chat as False
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Show chat interface only after clicking Continue
-if st.session_state.show_chat:
-    st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
+# --- Chat Interface Section ---
+elif st.session_state.show_chat:
+    # Ensure models are loaded (safety check)
+    if not st.session_state.llm_model or not st.session_state.tokenizer or not st.session_state.nlp_model:
+        st.error("Models are not loaded correctly. Please reload the page or contact support.")
+        st.stop() # Stop execution if models aren't ready
 
-    # Dropdown and Button section at the TOP, before chat history and input
-    selected_query = st.selectbox(
-        "Choose a query from examples:",
-        ["Choose your question"] + example_queries,
-        key="query_selectbox",
-        label_visibility="collapsed"
-    )
-    process_query_button = st.button("Ask this question", key="query_button")
+    # Retrieve models from session state
+    nlp = st.session_state.nlp_model
+    model = st.session_state.llm_model
+    tokenizer = st.session_state.tokenizer
 
-    # Initialize spaCy model for NER
-    nlp = load_spacy_model()
+    st.info("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
-    # Load DistilGPT2 model and tokenizer
-    model, tokenizer = load_model_and_tokenizer()
-    if model is None or tokenizer is None:
-        st.error("Failed to load the model.")
-        st.stop()
+    # Example queries dropdown and button
+    example_queries = [
+        "How do I buy a ticket?",
+        "How can I upgrade my ticket for the upcoming event in Hyderabad?",
+        "How do I change my personal details on my ticket?",
+        "How can I find details about upcoming events?",
+        "How do I contact customer service?",
+        "How do I get a refund?",
+        "What is the ticket cancellation fee?",
+        "Can I sell my ticket?"
+    ]
 
-    # Initialize chat history in session state
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # Use columns for better alignment of selectbox and button
+    col1, col2 = st.columns([3, 1]) # Adjust ratio as needed
+    with col1:
+        selected_query = st.selectbox(
+            "Choose a query from examples or type your own below:",
+            ["Choose your question"] + example_queries,
+            key="query_selectbox",
+            label_visibility="collapsed" # Hide label for cleaner look
+        )
+    with col2:
+        process_query_button = st.button("Ask selected", key="query_button") # Shorter button text
 
-    last_role = None # Track last message role
+    # --- Chat History Display ---
+    chat_container = st.container() # Use a container for chat messages
+    with chat_container:
+        last_role = None
+        for i, message in enumerate(st.session_state.chat_history):
+            is_last_message = (i == len(st.session_state.chat_history) - 1)
+            # Add separator line between user/assistant pairs, but not before the very first message
+            if message["role"] == "user" and last_role == "assistant" and i > 0:
+                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
 
-    # Display chat messages from history
-    for message in st.session_state.chat_history:
-        if message["role"] == "user" and last_role == "assistant":
-            st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-        with st.chat_message(message["role"], avatar=message["avatar"]):
-            st.markdown(message["content"], unsafe_allow_html=True)
-        last_role = message["role"]
+            with st.chat_message(message["role"], avatar=message["avatar"]):
+                st.markdown(message["content"], unsafe_allow_html=True)
+            last_role = message["role"]
 
+            # Don't add a line after the very last message
+            # if message["role"] == "assistant" and not is_last_message:
+            #      st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+
+
+    # --- Handle User Input (Dropdown or Text Input) ---
+    user_input = None
+    input_source = None # To track where the input came from
 
     # Process selected query from dropdown
-    if process_query_button:
-        if selected_query == "Choose your question":
-            st.error("⚠️ Please select your question from the dropdown.")
-        elif selected_query:
-            prompt_from_dropdown = selected_query
-            prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
+    if process_query_button and selected_query != "Choose your question":
+        user_input = selected_query
+        input_source = "dropdown"
 
-            st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
-            if last_role == "assistant":
-                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
-            last_role = "user"
-
-            with st.chat_message("assistant", avatar="🤖"):
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
-
-
-    # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:"):
-        prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
-        if not prompt.strip():
-            st.toast("⚠️ Please enter a question.", icon="⚠️")
+    # Process text input
+    if prompt := st.chat_input("Enter your own question here:"):
+        if prompt.strip():
+            user_input = prompt
+            input_source = "text_input"
         else:
-            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
-            if last_role == "assistant":
-                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt, unsafe_allow_html=True)
-            last_role = "user"
+            st.toast("⚠️ Please enter a question.", icon="⚠️")
 
-            with st.chat_message("assistant", avatar="🤖"):
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+    # --- Generate and Display Response ---
+    if user_input:
+        # Capitalize first letter (optional, stylistic choice)
+        processed_input = user_input[0].upper() + user_input[1:] if user_input else user_input
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+        # Add user message to history and display it
+        st.session_state.chat_history.append({"role": "user", "content": processed_input, "avatar": "👤"})
 
-    # Conditionally display reset button
-    if st.session_state.chat_history:
-        if st.button("Reset Chat", key="reset_button"):
-            st.session_state.chat_history = []
-            last_role = None
-            st.rerun()
+        # Rerun to display the user's message immediately
+        # This makes the UI feel more responsive before the bot generates
+        st.rerun()
+
+
+# --- Handle Response Generation (needs to run after potential rerun) ---
+# Check if the last message was from the user, indicating a response is needed
+if st.session_state.chat_history and st.session_state.chat_history[-1]["role"] == "user":
+     last_user_message = st.session_state.chat_history[-1]["content"]
+
+     # Check models again before generation
+     if not st.session_state.llm_model or not st.session_state.tokenizer or not st.session_state.nlp_model:
+        st.error("Models not loaded. Cannot generate response.")
+        st.stop()
+
+     nlp = st.session_state.nlp_model
+     model = st.session_state.llm_model
+     tokenizer = st.session_state.tokenizer
+
+     # Display thinking indicator and generate response
+     with chat_container: # Add the thinking indicator within the chat container
+         with st.chat_message("assistant", avatar="🤖"):
+             message_placeholder = st.empty()
+             generating_text = "Thinking..."
+             message_placeholder.markdown(f"{generating_text}▌") # Use cursor effect
+
+             try:
+                 dynamic_placeholders = extract_dynamic_placeholders(last_user_message, nlp)
+                 raw_response = generate_response(model, tokenizer, last_user_message)
+                 full_response = replace_placeholders(raw_response, dynamic_placeholders, static_placeholders)
+
+                 # Simulate typing effect (optional)
+                 # response_so_far = ""
+                 # for word in full_response.split():
+                 #     response_so_far += word + " "
+                 #     message_placeholder.markdown(f"{response_so_far}▌", unsafe_allow_html=True)
+                 #     time.sleep(0.05) # Adjust speed as needed
+
+                 message_placeholder.markdown(full_response, unsafe_allow_html=True) # Display final response
+
+                 # Add assistant response to history
+                 st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+
+             except Exception as e:
+                 st.error(f"An error occurred while generating the response: {e}")
+                 error_message = "Sorry, I encountered an issue. Please try again."
+                 message_placeholder.markdown(error_message, unsafe_allow_html=True)
+                 # Add error message to history (optional)
+                 st.session_state.chat_history.append({"role": "assistant", "content": error_message, "avatar": "🤖"})
+
+     # Rerun *after* adding the assistant message to update the display fully
+     st.rerun()
+
+
+# --- Reset Button ---
+if st.session_state.chat_history:
+    st.markdown("---") # Add a visual separator before the reset button
+    if st.button("Reset Chat", key="reset_button"):
+        st.session_state.chat_history = []
+        # Optionally clear selected query
+        st.session_state.query_selectbox = "Choose your question"
+        st.rerun()
