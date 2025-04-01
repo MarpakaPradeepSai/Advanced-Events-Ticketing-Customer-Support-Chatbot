@@ -279,15 +279,13 @@ if "show_chat" not in st.session_state:
 # Example queries for dropdown
 example_queries = [
     "How do I buy a ticket?",
-    "What is the cancellation policy?",
-    "I want to get a refund for my ticket.",
-    "How can I change my ticket details?",
-    "Tell me about upcoming events in London.",
-    "How to contact customer service?",
-    "What payment methods are accepted?",
-    "I need to report a payment issue.",
-    "Can I sell my ticket?",
-    "How to track my refund?",
+    "How can I upgrade my ticket for the upcoming event in Hyderabad?",
+    "How do I change my personal details on my ticket?",
+    "How can I find details about upcoming events?",
+    "How do I contact customer service?",
+    "How do I get a refund?", 
+    "What is the ticket cancellation fee?",
+    "Can I sell my ticket?"
 ]
 
 # Display Disclaimer and Continue button if chat hasn't started
