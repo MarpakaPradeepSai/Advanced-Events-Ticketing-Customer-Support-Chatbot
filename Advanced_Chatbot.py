@@ -397,7 +397,7 @@ if st.session_state.show_chat:
 
 
     # Input box at the bottom
-    if prompt := st.chat_input("Enter your question:"):
+    if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.", icon="⚠️")
