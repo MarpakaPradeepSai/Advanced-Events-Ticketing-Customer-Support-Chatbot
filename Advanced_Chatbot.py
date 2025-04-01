@@ -183,7 +183,7 @@ st.markdown(
     """
 <style>
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
+    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Default gradient for most buttons */
     color: white !important; /* Ensure text is white */
     border: none;
     border-radius: 25px; /* Rounded corners */
@@ -231,22 +231,10 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-/* Style for Continue Button to match Ask Question button */
-div[data-testid="stAppViewContainer"] div[style*="background-color: rgb(248, 215, 218);"] div[data-testid="stButton"] button {
-    background: linear-gradient(90deg, #29ABE2, #0077B6);
-    color: white !important;
-}
-</style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Custom CSS for the "Ask this question" button
-st.markdown(
-    """
-<style>
+/* Style for Continue and Ask Question buttons to match */
+div[data-testid="stButton"] button[key="continue_button"],
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Matching gradient */
     color: white !important;
 }
 </style>
