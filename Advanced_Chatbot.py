@@ -272,9 +272,11 @@ st.markdown(
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility
+# Initialize session state for controlling disclaimer visibility and stop generation
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
+if "stop_generation" not in st.session_state:
+    st.session_state.stop_generation = False
 
 # Example queries for dropdown
 example_queries = [
@@ -283,7 +285,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -335,13 +337,16 @@ if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
     # Dropdown and Button section at the TOP, before chat history and input
-    selected_query = st.selectbox(
-        "Choose a query from examples:",
-        ["Choose your question"] + example_queries,
-        key="query_selectbox",
-        label_visibility="collapsed"
-    )
-    process_query_button = st.button("Ask this question", key="query_button")
+    col1, col2 = st.columns([0.8, 0.2]) # Adjust ratios as needed
+    with col1:
+        selected_query = st.selectbox(
+            "Choose a query from examples:",
+            ["Choose your question"] + example_queries,
+            key="query_selectbox",
+            label_visibility="collapsed"
+        )
+    with col2:
+        process_query_button = st.button("Ask this question", key="query_button")
 
     # Initialize spaCy model for NER
     nlp = load_spacy_model()
@@ -386,45 +391,67 @@ if st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
+                    st.session_state.stop_generation = False # Reset stop flag before generation
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
                     response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                if not st.session_state.stop_generation: # Only display if not stopped
+                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                else:
+                    message_placeholder.markdown("Response generation stopped by user.", unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": "Response generation stopped by user.", "avatar": "🤖"})
+
+                st.session_state.stop_generation = False # Reset stop flag after processing (important!)
+                last_role = "assistant"
 
 
     # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:"):
-        prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
-        if not prompt.strip():
-            st.toast("⚠️ Please enter a question.", icon="⚠️")
-        else:
-            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
-            if last_role == "assistant":
-                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt, unsafe_allow_html=True)
-            last_role = "user"
+    col3, col4 = st.columns([0.8, 0.2]) # Adjust ratios as needed for input and stop button
+    with col3:
+        if prompt := st.chat_input("Enter your own question:"):
+            user_prompt = prompt # Capture prompt here before clearing
+            prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
+            if not prompt.strip():
+                st.toast("⚠️ Please enter a question.", icon="⚠️")
+            else:
+                st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
+                if last_role == "assistant":
+                    st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+                with st.chat_message("user", avatar="👤"):
+                    st.markdown(prompt, unsafe_allow_html=True)
+                last_role = "user"
 
-            with st.chat_message("assistant", avatar="🤖"):
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                with st.chat_message("assistant", avatar="🤖"):
+                    message_placeholder = st.empty()
+                    generating_response_text = "Generating response..."
+                    with st.spinner(generating_response_text):
+                        st.session_state.stop_generation = False # Reset stop flag before generation
+                        dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                        response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
+                        full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                        # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                    if not st.session_state.stop_generation: # Only display if not stopped
+                        message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                        st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                    else:
+                        message_placeholder.markdown("Response generation stopped by user.", unsafe_allow_html=True)
+                        st.session_state.chat_history.append({"role": "assistant", "content": "Response generation stopped by user.", "avatar": "🤖"})
+
+                    st.session_state.stop_generation = False # Reset stop flag after processing (important!)
+                    last_role = "assistant"
+    with col4:
+        stop_button = st.button("Stop", key="stop_button")
+        if stop_button:
+            st.session_state.stop_generation = True
 
     # Conditionally display reset button
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
+            st.session_state.stop_generation = False # Reset stop flag on chat reset
             last_role = None
             st.rerun()
