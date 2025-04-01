@@ -237,6 +237,10 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
+.continue-button {
+    text-align: right; /* Align the content (button) to the right */
+    margin-top: 10px; /* Add some space above the button */
+}
 
 </style>
     """,
@@ -268,21 +272,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-# Custom CSS for Continue button alignment
-st.markdown(
-    """
-<style>
-    .continue-button {
-        display: flex;
-        justify-content: flex-end; /* Align button to the right */
-        margin-top: 10px; /* Add some space above the button */
-    }
-</style>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
