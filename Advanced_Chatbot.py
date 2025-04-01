@@ -162,25 +162,33 @@ def extract_dynamic_placeholders(user_question, nlp):
 
 # Generate a chatbot response using DistilGPT2
 def generate_response(model, tokenizer, instruction, max_length=256):
+    st.session_state.stop_generation = False # Reset stop flag at the start of generation
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     input_text = f"Instruction: {instruction} Response:"
-    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-    with torch.no_grad():
-        outputs = model.generate(
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_length=max_length,
-            num_return_sequences=1,
-            temperature=0.7,
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response_start = response.find("Response:") + len("Response:")
-    return response[response_start:].strip()
+    input_ids = tokenizer.encode(input_text, return_tensors="pt").to(device)
+    response = ""
+
+    for _ in range(max_length):
+        if st.session_state.stop_generation: # Check stop flag in each iteration
+            break
+        with torch.no_grad():
+            outputs = model.generate(
+                input_ids,
+                max_new_tokens=1, # Generate only one token at a time
+                temperature=0.7,
+                top_p=0.95,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id
+            )
+        next_token_id = outputs[0][-1] # Get the last generated token
+        if next_token_id == tokenizer.eos_token_id: # Check for EOS token
+            break
+        response += tokenizer.decode(next_token_id, skip_special_tokens=True)
+        input_ids = torch.cat([input_ids, outputs[:, -1:]], dim=-1) # Append the new token to input_ids
+
+    return response.strip()
 
 # CSS styling
 st.markdown(
@@ -283,7 +291,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -330,18 +338,27 @@ if not st.session_state.show_chat:
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
+# Initialize session state for stop generation flag
+if "stop_generation" not in st.session_state:
+    st.session_state.stop_generation = False
+
 # Show chat interface only after clicking Continue
 if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
     # Dropdown and Button section at the TOP, before chat history and input
-    selected_query = st.selectbox(
-        "Choose a query from examples:",
-        ["Choose your question"] + example_queries,
-        key="query_selectbox",
-        label_visibility="collapsed"
-    )
-    process_query_button = st.button("Ask this question", key="query_button")
+    col1, col2, col3 = st.columns([3, 2, 1]) # Adjust column widths as needed
+    with col1:
+        selected_query = st.selectbox(
+            "Choose a query from examples:",
+            ["Choose your question"] + example_queries,
+            key="query_selectbox",
+            label_visibility="collapsed"
+        )
+    with col2:
+        process_query_button = st.button("Ask this question", key="query_button")
+    with col3:
+        stop_button = st.button("Stop", key="stop_button") # Stop Button
 
     # Initialize spaCy model for NER
     nlp = load_spacy_model()
@@ -366,6 +383,10 @@ if st.session_state.show_chat:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
+    # Handle Stop button click
+    if stop_button:
+        st.session_state.stop_generation = True
+        st.toast("Response generation stopped.", icon="⚠️")
 
     # Process selected query from dropdown
     if process_query_button:
@@ -422,11 +443,18 @@ if st.session_state.show_chat:
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
-    # Conditionally display reset button
+    # Conditionally display reset and stop buttons
     if st.session_state.chat_history:
-        if st.button("Reset Chat", key="reset_button"):
-            st.session_state.chat_history = []
-            last_role = None
-            st.rerun()
-
-
+        col1_reset, col2_stop_reset, _ = st.columns([2, 2, 8]) # Adjust column widths as needed
+        with col1_reset:
+            if st.button("Reset Chat", key="reset_button"):
+                st.session_state.chat_history = []
+                last_role = None
+                st.session_state.stop_generation = False # Reset stop flag on chat reset
+                st.rerun()
+        with col2_stop_reset:
+            if st.button("Reset Chat & Stop Gen", key="reset_stop_button"): # Added button to reset and stop
+                st.session_state.chat_history = []
+                last_role = None
+                st.session_state.stop_generation = True # Set stop flag on reset and stop
+                st.rerun()
