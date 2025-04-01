@@ -323,12 +323,12 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Create columns to align button to the right
-    col1, col2 = st.columns([3, 1])  # 3:1 ratio for left-right space distribution
-    with col2:
-        if st.button("Continue", key="continue_button"):
-            st.session_state.show_chat = True
-            st.rerun()
+    # Continue button aligned to the right
+    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    if st.button("Continue", key="continue_button"):
+        st.session_state.show_chat = True
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Show chat interface only after clicking Continue
 if st.session_state.show_chat:
@@ -428,3 +428,4 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
+
