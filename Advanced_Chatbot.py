@@ -283,47 +283,48 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
 
 # Display Disclaimer and Continue button if chat hasn't started
 if not st.session_state.show_chat:
-    st.markdown(
-        """
-        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
-            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
-            </p>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                The model has been fine-tuned on the following intents:
-            </p>
-            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                <li>Cancel Ticket</li>
-                <li>Buy Ticket</li>
-                <li>Sell Ticket</li>
-                <li>Transfer Ticket</li>
-                <li>Upgrade Ticket</li>
-                <li>Find Ticket</li>
-                <li>Change Personal Details on Ticket</li>
-                <li>Get Refund</li>
-                <li>Find Upcoming Events</li>
-                <li>Customer Service</li>
-                <li>Check Cancellation Fee</li>
-                <li>Track Cancellation</li>
-                <li>Ticket Information</li>
-            </ul>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    with st.expander("View Disclaimer"):
+        st.markdown(
+            """
+            <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
+                <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
+                <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                    This chatbot has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+                </p>
+                <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                    The model has been fine-tuned on the following intents:
+                </p>
+                <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                    <li>Cancel Ticket</li>
+                    <li>Buy Ticket</li>
+                    <li>Sell Ticket</li>
+                    <li>Transfer Ticket</li>
+                    <li>Upgrade Ticket</li>
+                    <li>Find Ticket</li>
+                    <li>Change Personal Details on Ticket</li>
+                    <li>Get Refund</li>
+                    <li>Find Upcoming Events</li>
+                    <li>Customer Service</li>
+                    <li>Check Cancellation Fee</li>
+                    <li>Track Cancellation</li>
+                    <li>Ticket Information</li>
+                </ul>
+                <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+                    Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Continue button aligned to the right
+    # Continue button aligned to the right, outside the expander
     st.markdown('<div class="continue-button">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
@@ -428,5 +429,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
