@@ -237,36 +237,47 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
 
-/* Custom CSS for the chat input container with shadow */
-.stChatInputContainer {
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2) !important;
-    border-radius: 10px !important;
-    padding: 15px !important;
-    background-color: white !important;
-    margin-top: 20px !important;
-}
-
-/* Custom CSS for the chat input textarea */
-.stTextArea textarea {
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 8px !important;
-    padding: 12px !important;
-    font-size: 16px !important;
-}
-
-/* Custom CSS for the "Ask this question" button */
+# Custom CSS for the "Ask this question" button
+st.markdown(
+    """
+<style>
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
     background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
     color: white !important;
 }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
 
-/* Custom CSS for horizontal line separator */
-.horizontal-line {
-    border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-    margin: 15px 0; /* Adjust spacing above and below the line */
+# Custom CSS for horizontal line separator
+st.markdown(
+    """
+<style>
+    .horizontal-line {
+        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+        margin: 15px 0; /* Adjust spacing above and below the line */
+    }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# --- New CSS for Chat Input Shadow Effect ---
+st.markdown(
+    """
+<style>
+div[data-testid="stChatInput"] {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
 }
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -397,7 +408,7 @@ if st.session_state.show_chat:
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
-    # Input box at the bottom with shadow effect
+    # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
