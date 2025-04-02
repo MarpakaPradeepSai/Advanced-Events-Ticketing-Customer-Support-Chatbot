@@ -182,101 +182,95 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# CSS styling
+# CSS styling with enhanced input section shadow effect
 st.markdown(
     """
 <style>
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
-    color: white !important; /* Ensure text is white */
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    color: white !important;
     border: none;
-    border-radius: 25px; /* Rounded corners */
-    padding: 10px 20px; /* Padding */
-    font-size: 1.2em; /* Font size */
-    font-weight: bold; /* Bold text */
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
-    display: inline-flex; /* Helps with alignment */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
-    width: auto; /* Fit content width */
-    min-width: 100px; /* Optional: ensure a minimum width */
-    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
-}
-.stButton>button:hover {
-    transform: scale(1.05); /* Slightly larger on hover */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
-    color: white !important; /* Ensure text stays white on hover */
-}
-.stButton>button:active {
-    transform: scale(0.98); /* Slightly smaller when clicked */
+    margin-top: 5px;
+    width: auto;
+    min-width: 100px;
+    font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Apply Times New Roman to all text elements */
+/* Enhanced shadow effect for chat input container */
+div[data-testid="stChatInputContainer"] {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+div[data-testid="stChatInputContainer"]:hover {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+div[data-testid="stChatInputContainer"]:focus-within {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    border-color: #29ABE2;
+}
+
+.stButton>button:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    color: white !important;
+}
+
+.stButton>button:active {
+    transform: scale(0.98);
+}
+
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
 .stTextInput > div > div > input {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
 .stTextArea > div > div > textarea {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
-    font-family: 'Times New Roman', Times, serif !important;
-}
-.streamlit-expanderContent { /* For text inside expanders if used */
-    font-family: 'Times New Roman', Times, serif !important;
-}
-</style>
-    """,
-    unsafe_allow_html=True,
-)
 
-# Custom CSS for the "Ask this question" button
-st.markdown(
-    """
-<style>
+.st-emotion-cache-r421ms {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+.streamlit-expanderContent {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+.horizontal-line {
+    border-top: 2px solid #e0e0e0;
+    margin: 15px 0;
+}
+
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    background: linear-gradient(90deg, #29ABE2, #0077B6);
     color: white !important;
-}
-</style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Custom CSS for horizontal line separator
-st.markdown(
-    """
-<style>
-    .horizontal-line {
-        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-        margin: 15px 0; /* Adjust spacing above and below the line */
-    }
-</style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# --- New CSS for Chat Input Shadow Effect ---
-st.markdown(
-    """
-<style>
-div[data-testid="stChatInput"] {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-    padding: 10px;
-    margin: 10px 0;
 }
 </style>
     """,
@@ -338,7 +332,7 @@ if not st.session_state.show_chat:
     )
 
     # Continue button aligned to the right using columns
-    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
+    col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
@@ -370,7 +364,7 @@ if st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -400,15 +394,14 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
-    # Input box at the bottom
+    # Input box at the bottom with enhanced shadow effect
     if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
@@ -426,9 +419,8 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                    response_gpt = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
 
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
