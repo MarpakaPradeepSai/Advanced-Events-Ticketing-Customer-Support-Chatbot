@@ -221,9 +221,13 @@ st.markdown(
 /* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
+    background-color: #f0f2f6 !important; /* Slightly darker background for selectbox */
+    color: #333 !important; /* Darker text color for selectbox */
 }
 .stTextInput > div > div > input {
     font-family: 'Times New Roman', Times, serif !important;
+    background-color: #f0f2f6 !important; /* Slightly darker background for text input */
+    color: #333 !important; /* Darker text color for text input */
 }
 .stTextArea > div > div > textarea {
     font-family: 'Times New Roman', Times, serif !important;
@@ -283,7 +287,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
