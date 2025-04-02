@@ -86,7 +86,7 @@ static_placeholders = {
     "{{EDIT_BUTTON}}": "<b>Edit</b>",
     "{{EVENT_ORGANIZER_OPTION}}": "<b>Event Organizer</b>",
     "{{EVENTS_PAGE}}": "<b>Events</b>",
-    "{{EVENTS_SECTION}}": "<b>Events</b>",
+    "{{EVENTS_SECTION}}": "< توانستb>Events</b>",
     "{{FIND_TICKET_OPTION}}": "<b>Find Ticket</b>",
     "{{FIND_UPCOMING_EVENTS_OPTION}}": "<b>Find Upcoming Events</b>",
     "{{GET_REFUND_BUTTON}}": "<b>Get Refund</b>",
@@ -182,7 +182,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# CSS styling
+# CSS styling with added rules for input and placeholder
 st.markdown(
     """
 <style>
@@ -238,16 +238,14 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Custom styling for chat input label and text */
-.stChatInput label {
-    color: #333 !important; /* Darker text color for label */
+/* Added styles for input placeholder and text color */
+input[type="text"]::placeholder {
+    color: #333; /* Darker gray for placeholder */
+    opacity: 1;
 }
-.stChatInput textarea {
-    color: #333 !important; /* Darker text color for input text */
-    background-color: #f9f9f9 !important; /* Slightly darker background for input field */
-    border: 1px solid #ccc !important; /* Optional: Add a border if needed */
+input[type="text"] {
+    color: #000; /* Black for input text */
 }
-
 
 </style>
     """,
@@ -294,7 +292,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
