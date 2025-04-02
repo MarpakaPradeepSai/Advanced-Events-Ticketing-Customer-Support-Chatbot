@@ -281,3 +281,4 @@ if user_input:
             response = replace_placeholders(response, dynamic_placeholders, static_placeholders)
 
             st.markdown(f"<h2>{response}</h2>", unsafe_allow_html=True)
+
