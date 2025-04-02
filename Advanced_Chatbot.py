@@ -218,12 +218,6 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* CSS for right-aligned continue button */
-.continue-button-container {
-    display: flex;
-    justify-content: flex-end;
-}
-
 /* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
@@ -242,6 +236,12 @@ st.markdown(
 }
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Right-align the continue button */
+.continue-button-container {
+    display: flex;
+    justify-content: flex-end;
 }
 
 </style>
@@ -329,7 +329,7 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right using container with flex-end justification
+    # Continue button aligned to the right using a container with right alignment
     st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
