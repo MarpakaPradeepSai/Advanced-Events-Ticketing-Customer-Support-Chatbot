@@ -218,6 +218,12 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* CSS for right-aligned continue button */
+.continue-button-container {
+    display: flex;
+    justify-content: flex-end;
+}
+
 /* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
@@ -236,11 +242,6 @@ st.markdown(
 }
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
-}
-
-.continue-button {
-    display: flex;
-    justify-content: flex-end; /* Align button to the right */
 }
 
 </style>
@@ -288,7 +289,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -328,8 +329,8 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right
-    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    # Continue button aligned to the right using container with flex-end justification
+    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
         st.rerun()
