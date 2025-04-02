@@ -237,15 +237,6 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
-/* Shadow effect for chat input section */
-div[data-testid="stChatInput"] {
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* Shadow effect */
-    border-radius: 10px; /* Optional: rounded corners for better aesthetics */
-    padding: 5px; /* Optional: padding to ensure content isn't too close to edges */
-    background-color: #ffffff; /* Optional: white background for contrast */
-}
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -272,6 +263,21 @@ st.markdown(
         border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
         margin: 15px 0; /* Adjust spacing above and below the line */
     }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# --- New CSS for Chat Input Shadow Effect ---
+st.markdown(
+    """
+<style>
+div[data-testid="stChatInput"] {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
 </style>
     """,
     unsafe_allow_html=True,
