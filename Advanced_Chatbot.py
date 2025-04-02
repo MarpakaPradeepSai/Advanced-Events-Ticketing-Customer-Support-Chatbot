@@ -238,6 +238,14 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Shadow effect for chat input section */
+div[data-testid="stChatInput"] {
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* Shadow effect */
+    border-radius: 10px; /* Optional: rounded corners for better aesthetics */
+    padding: 5px; /* Optional: padding to ensure content isn't too close to edges */
+    background-color: #ffffff; /* Optional: white background for contrast */
+}
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -426,5 +434,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
