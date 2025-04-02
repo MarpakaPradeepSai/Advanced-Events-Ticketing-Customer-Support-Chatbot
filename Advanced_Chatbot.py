@@ -237,7 +237,6 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -264,6 +263,23 @@ st.markdown(
         border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
         margin: 15px 0; /* Adjust spacing above and below the line */
     }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Custom CSS for darkening the "Enter your own question:" text and search field
+st.markdown(
+    """
+<style>
+div[data-testid="stChatInput"] input {
+    color: #000 !important;
+    background-color: #f0f0f0 !important;
+    border: 1px solid #ccc !important;
+}
+div[data-testid="stChatInput"] input::placeholder {
+    color: #555 !important;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -388,8 +404,6 @@ if st.session_state.show_chat:
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
                     response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -398,7 +412,7 @@ if st.session_state.show_chat:
     if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
-            st.toast("⚠️ Please enter a question.")
+            st.toast("⚠️ Please enter a question.", icon="⚠️")
         else:
             st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
             if last_role == "assistant":
@@ -414,8 +428,6 @@ if st.session_state.show_chat:
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
                     response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
