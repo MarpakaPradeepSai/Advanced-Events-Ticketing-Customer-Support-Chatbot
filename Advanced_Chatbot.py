@@ -238,6 +238,15 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Add shadow to chat input section */
+div.stChatInputContainer {
+    box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1); /* Example shadow: adjust values as needed */
+    padding-top: 10px; /* Add some padding to visually separate shadow and input */
+    margin-top: 10px; /* Add margin to separate from content above */
+    border-radius: 10px 10px 0 0; /* Optional: round top corners if desired */
+    background-color: white; /* Optional: ensure background is white to make shadow visible */
+}
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -283,7 +292,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
