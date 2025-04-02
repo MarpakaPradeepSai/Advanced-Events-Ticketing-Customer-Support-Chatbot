@@ -238,12 +238,13 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Style for the continue button container */
-.continue-button {
+/* Custom CSS for the continue button alignment */
+.continue-button-container {
     display: flex;
-    justify-content: flex-end; /* Aligns button to the right */
-    margin-top: 20px; /* Adds some space above the button */
+    justify-content: flex-end;
+    width: 100%;
 }
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -329,8 +330,8 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right
-    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
+    # Continue button aligned to the right using a container
+    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
         st.rerun()
@@ -372,6 +373,7 @@ if st.session_state.show_chat:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
+
     # Process selected query from dropdown
     if process_query_button:
         if selected_query == "Choose your question":
@@ -399,6 +401,7 @@ if st.session_state.show_chat:
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
+
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
