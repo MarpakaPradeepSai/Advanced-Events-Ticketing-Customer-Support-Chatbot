@@ -289,6 +289,8 @@ st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>
 # Initialize session state for controlling disclaimer visibility
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
+if "is_generating" not in st.session_state:
+    st.session_state.is_generating = False # Track if response is being generated
 
 # Example queries for dropdown
 example_queries = [
@@ -297,7 +299,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation?",
     "How can I sell my ticket?"
@@ -355,9 +357,10 @@ if st.session_state.show_chat:
         "Choose a query from examples:",
         ["Choose your question"] + example_queries,
         key="query_selectbox",
-        label_visibility="collapsed"
+        label_visibility="collapsed",
+        disabled=st.session_state.is_generating # Disable when generating
     )
-    process_query_button = st.button("Ask this question", key="query_button")
+    process_query_button = st.button("Ask this question", key="query_button", disabled=st.session_state.is_generating) # Disable when generating
 
     # Initialize spaCy model for NER
     nlp = load_spacy_model()
@@ -401,17 +404,21 @@ if st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                    st.session_state.is_generating = True # Set generating state to True
+                    try:
+                        dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                        response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
+                        full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                        # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                        message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                        st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                        last_role = "assistant"
+                    finally:
+                        st.session_state.is_generating = False # Set generating state back to False
 
     # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:"):
+    if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.is_generating): # Disable when generating
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.")
@@ -427,14 +434,18 @@ if st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                    st.session_state.is_generating = True # Set generating state to True
+                    try:
+                        dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                        response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
+                        full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                        # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                        message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                        st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                        last_role = "assistant"
+                    finally:
+                        st.session_state.is_generating = False # Set generating state back to False
 
     # Conditionally display reset button
     if st.session_state.chat_history:
@@ -442,5 +453,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
