@@ -238,12 +238,6 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Right-align the continue button */
-.continue-button-container {
-    display: flex;
-    justify-content: flex-end;
-}
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -329,8 +323,8 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right using a container with right alignment
-    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
+    # Continue button aligned to the right
+    st.markdown('<div style="text-align: right;">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
         st.rerun()
@@ -362,7 +356,7 @@ if st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None  # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -371,7 +365,6 @@ if st.session_state.show_chat:
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
-
 
     # Process selected query from dropdown
     if process_query_button:
@@ -393,14 +386,11 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
-
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
@@ -420,10 +410,8 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
+                    response_gpt = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
