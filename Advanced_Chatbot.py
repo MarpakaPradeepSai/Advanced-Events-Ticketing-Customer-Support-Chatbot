@@ -238,11 +238,9 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Custom CSS for the continue button alignment */
-.continue-button-container {
+.continue-button {
     display: flex;
-    justify-content: flex-end;
-    width: 100%;
+    justify-content: flex-end; /* Align button to the right */
 }
 
 </style>
@@ -290,7 +288,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -330,8 +328,8 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right using a container
-    st.markdown('<div class="continue-button-container">', unsafe_allow_html=True)
+    # Continue button aligned to the right
+    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
     if st.button("Continue", key="continue_button"):
         st.session_state.show_chat = True
         st.rerun()
