@@ -237,20 +237,6 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
-/* Custom outline for chat input */
-.stTextInput > div > div > input {
-    border: 2px solid black !important; /* Black outline by default */
-    border-radius: 5px; /* Optional: rounded corners for input */
-    padding-left: 10px; /* Optional: padding inside input */
-}
-
-.stTextInput > div > div > input:focus {
-    border-color: red !important; /* Red outline when focused */
-    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25) !important; /* Optional: red shadow on focus */
-}
-
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -282,6 +268,26 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Custom CSS for the "Enter your own question:" field
+st.markdown(
+    """
+    <style>
+    /* Target the chat input field (both input and textarea if applicable) */
+    div[data-testid="stChatInput"] input,
+    div[data-testid="stChatInput"] textarea {
+        border: 2px solid black !important;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+    div[data-testid="stChatInput"] input:focus,
+    div[data-testid="stChatInput"] textarea:focus {
+        border: 2px solid red !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
@@ -296,7 +302,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -369,7 +375,7 @@ if st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None  # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -399,10 +405,8 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -425,10 +429,8 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
+                    response_gpt = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
