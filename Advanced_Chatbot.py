@@ -182,7 +182,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-# CSS styling with added rule for aligning the Continue button to the right
+# CSS styling
 st.markdown(
     """
 <style>
@@ -212,14 +212,12 @@ st.markdown(
 .stButton>button:active {
     transform: scale(0.98); /* Slightly smaller when clicked */
 }
-.continue-button {
-    display: flex;
-    justify-content: flex-end;
-}
+
 /* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
 /* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
@@ -238,6 +236,13 @@ st.markdown(
 }
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Style for the continue button container */
+.continue-button {
+    display: flex;
+    justify-content: flex-end; /* Aligns button to the right */
+    margin-top: 20px; /* Adds some space above the button */
 }
 </style>
     """,
