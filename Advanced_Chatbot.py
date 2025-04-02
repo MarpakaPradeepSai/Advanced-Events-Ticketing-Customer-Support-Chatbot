@@ -299,7 +299,7 @@ example_queries = [
     "How do I contact customer service?",
     "How do I get a refund?", 
     "What is the ticket cancellation fee?",
-    "Can I sell my ticket?"
+    "How can I sell my ticket?"
 ]
 
 # Display Disclaimer and Continue button if chat hasn't started
