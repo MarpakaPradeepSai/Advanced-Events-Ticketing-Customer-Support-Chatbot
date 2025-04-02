@@ -238,6 +238,17 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Custom styling for chat input label and text */
+.stChatInput label {
+    color: #333 !important; /* Darker text color for label */
+}
+.stChatInput textarea {
+    color: #333 !important; /* Darker text color for input text */
+    background-color: #f9f9f9 !important; /* Slightly darker background for input field */
+    border: 1px solid #ccc !important; /* Optional: Add a border if needed */
+}
+
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -283,7 +294,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
