@@ -238,11 +238,6 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-.continue-button {
-    text-align: right; /* Aligns the button to the right */
-    margin-top: 10px; /* Adds some space above the button if needed */
-}
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -288,7 +283,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -328,12 +323,12 @@ if not st.session_state.show_chat:
         unsafe_allow_html=True
     )
 
-    # Continue button aligned to the right
-    st.markdown('<div class="continue-button">', unsafe_allow_html=True)
-    if st.button("Continue", key="continue_button"):
-        st.session_state.show_chat = True
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Continue button aligned to the right using columns
+    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
+    with col2:
+        if st.button("Continue", key="continue_button"):
+            st.session_state.show_chat = True
+            st.rerun()
 
 # Show chat interface only after clicking Continue
 if st.session_state.show_chat:
@@ -371,7 +366,6 @@ if st.session_state.show_chat:
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-
     # Process selected query from dropdown
     if process_query_button:
         if selected_query == "Choose your question":
@@ -399,7 +393,6 @@ if st.session_state.show_chat:
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
-
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
