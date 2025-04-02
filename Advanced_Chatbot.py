@@ -41,7 +41,7 @@ def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
 # Load spaCy model for NER
 @st.cache_resource
 def load_spacy_model():
-    nlp = spacy.load("en_core_web_trf")
+    nlp = spacy.load("en_core-web-trf")
     return nlp
 
 # Load the DistilGPT2 model and tokenizer
@@ -238,6 +238,11 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Style for chat input placeholder */
+div[data-testid="stChatInput"] input::placeholder {
+    color: rgba(49, 51, 63, 0.6); /* Darker placeholder color */
+}
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -283,7 +288,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -395,7 +400,7 @@ if st.session_state.show_chat:
             last_role = "assistant"
 
     # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:"):
+    if prompt := st.chat_input("Enter your own question:", placeholder="Enter your own question"): # Added placeholder here as well for clarity
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.", icon="⚠️")
