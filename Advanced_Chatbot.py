@@ -299,6 +299,7 @@ example_queries = [
     "How do I contact customer service?",
     "How do I get a refund?", 
     "What is the ticket cancellation fee?",
+    "How can I track my ticket cancellation?",
     "How can I sell my ticket?"
 ]
 
