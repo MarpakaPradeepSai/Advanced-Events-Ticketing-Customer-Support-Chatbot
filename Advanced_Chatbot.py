@@ -332,6 +332,7 @@ if not st.session_state.show_chat:
             </ul>
             <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
                 Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+                Even if the model fails to provide accurate responses from the predefined intents, we kindly ask for your patience and encourage you to try again.
             </p>
         </div>
         """,
