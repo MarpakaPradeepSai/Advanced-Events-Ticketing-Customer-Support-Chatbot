@@ -238,6 +238,19 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
+/* Custom outline for chat input */
+.stTextInput > div > div > input {
+    border: 2px solid black !important; /* Black outline by default */
+    border-radius: 5px; /* Optional: rounded corners for input */
+    padding-left: 10px; /* Optional: padding inside input */
+}
+
+.stTextInput > div > div > input:focus {
+    border-color: red !important; /* Red outline when focused */
+    box-shadow: 0 0 0 0.2rem rgba(255, 0, 0, 0.25) !important; /* Optional: red shadow on focus */
+}
+
+
 </style>
     """,
     unsafe_allow_html=True,
@@ -283,7 +296,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -426,5 +439,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
