@@ -238,11 +238,6 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Darker placeholder for chat input */
-div[data-baseweb="input"] > div > input::placeholder {
-    color: #808080 !important; /* Darker grey color */
-}
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -288,7 +283,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?",
+    "How do I get a refund?", 
     "What is the ticket cancellation fee?",
     "Can I sell my ticket?"
 ]
@@ -400,7 +395,7 @@ if st.session_state.show_chat:
             last_role = "assistant"
 
     # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:", placeholder="Enter your own question"): # Added placeholder here as well for clarity
+    if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.", icon="⚠️")
