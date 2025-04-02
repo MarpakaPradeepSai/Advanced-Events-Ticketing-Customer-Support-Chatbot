@@ -237,7 +237,6 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
 </style>
     """,
     unsafe_allow_html=True,
@@ -269,6 +268,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# --- New CSS for Chat Input Shadow Effect ---
+st.markdown(
+    """
+<style>
+div[data-testid="stChatInput"] {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
@@ -285,7 +299,8 @@ example_queries = [
     "How do I contact customer service?",
     "How do I get a refund?", 
     "What is the ticket cancellation fee?",
-    "Can I sell my ticket?"
+    "How can I track my ticket cancellation?",
+    "How can I sell my ticket?"
 ]
 
 # Display Disclaimer and Continue button if chat hasn't started
@@ -426,5 +441,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
