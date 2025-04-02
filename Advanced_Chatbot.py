@@ -398,7 +398,7 @@ if st.session_state.show_chat:
     if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
-            st.toast("⚠️ Please enter a question.", icon="⚠️")
+            st.toast("⚠️ Please enter a question.")
         else:
             st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
             if last_role == "assistant":
