@@ -5,6 +5,7 @@ import requests
 import os
 import spacy
 import time
+import transformers # Import the transformers library
 
 # GitHub directory containing the DistilGPT2 model files
 GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
@@ -191,8 +192,6 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     response_start = response.find("Response:") + len("Response:")
     return response[response_start:].strip()
 
-import transformers
-
 # Custom Stopping Criteria to stop generation when stop_generation is True
 class StopGenerationCriteria(transformers.StoppingCriteria):
     def __init__(self, session_state):
@@ -203,11 +202,12 @@ class StopGenerationCriteria(transformers.StoppingCriteria):
 
 # Custom Callback to accumulate response tokens
 class AccumulateResponseCallback(transformers.TrainerCallback):
-    def __init__(self, accumulated_response_str):
+    def __init__(self, accumulated_response_str, tokenizer): # Added tokenizer here
         self.accumulated_response_str = accumulated_response_str
+        self.tokenizer = tokenizer # Store tokenizer
 
     def on_generate_chunk(self, args, state, control, chunk_ids, output_scores=None, **kwargs):
-        current_chunk = tokenizer.decode(chunk_ids, skip_special_tokens=True)
+        current_chunk = self.tokenizer.decode(chunk_ids, skip_special_tokens=True) # Use stored tokenizer
         self.accumulated_response_str += current_chunk # Accumulate the response in the string
 
 # CSS styling
@@ -396,7 +396,7 @@ if st.session_state.show_chat:
     )
     col1, col2 = st.columns([1, 2]) # Adjust ratio as needed
     with col1:
-        ask_query_button = st.button("Ask this question", key="query_button', disabled=st.session_state.generating_response)
+        ask_query_button = st.button("Ask this question", key="query_button", disabled=st.session_state.generating_response) # Corrected key here
     with col2:
         if st.session_state.generating_response:
             stop_button = st.button("⏹️ Stop Generating", key="stop_button") # Stop Symbol
