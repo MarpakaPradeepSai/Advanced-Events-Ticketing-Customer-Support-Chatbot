@@ -5,7 +5,6 @@ import requests
 import os
 import spacy
 import time
-import threading # Needed for potential future interruption (though not fully implemented here)
 
 # GitHub directory containing the DistilGPT2 model files
 GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
@@ -21,86 +20,41 @@ MODEL_FILES = [
     "vocab.json"
 ]
 
-# --- Model Loading and Utility Functions (Mostly Unchanged) ---
-
 # Function to download model files from GitHub
 def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     os.makedirs(model_dir, exist_ok=True)
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    total_files = len(MODEL_FILES)
 
-    for i, filename in enumerate(MODEL_FILES):
+    for filename in MODEL_FILES:
         url = f"{GITHUB_MODEL_URL}/{filename}"
         local_path = os.path.join(model_dir, filename)
-        status_text.text(f"Downloading {filename}...")
 
         if not os.path.exists(local_path):
-            try:
-                response = requests.get(url, stream=True)
-                response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx)
-                total_size = int(response.headers.get('content-length', 0))
-                block_size = 1024 # 1 Kibibyte
-                downloaded_size = 0
+            response = requests.get(url)
+            if response.status_code == 200:
                 with open(local_path, "wb") as f:
-                    for data in response.iter_content(block_size):
-                        downloaded_size += len(data)
-                        f.write(data)
-                        # Update progress within file download if needed (optional, can slow down)
-                        # if total_size > 0:
-                        #     file_progress = downloaded_size / total_size
-                        #     overall_progress = (i + file_progress) / total_files
-                        #     progress_bar.progress(min(overall_progress, 1.0))
-
-            except requests.exceptions.RequestException as e:
-                st.error(f"Failed to download {filename} from GitHub. Error: {e}")
-                # Clean up partially downloaded file
-                if os.path.exists(local_path):
-                    os.remove(local_path)
-                status_text.text("")
-                progress_bar.empty()
+                    f.write(response.content)
+            else:
+                st.error(f"Failed to download {filename} from GitHub.")
                 return False
-        progress_bar.progress((i + 1) / total_files)
-
-    status_text.text("Model files downloaded successfully.")
-    time.sleep(1) # Keep success message visible briefly
-    status_text.empty()
-    progress_bar.empty()
     return True
 
 # Load spaCy model for NER
 @st.cache_resource
 def load_spacy_model():
-    try:
-        nlp = spacy.load("en_core_web_trf")
-    except OSError:
-        st.info("Downloading spaCy model 'en_core_web_trf'...")
-        spacy.cli.download("en_core_web_trf")
-        nlp = spacy.load("en_core_web_trf")
+    nlp = spacy.load("en_core_web_trf")
     return nlp
 
 # Load the DistilGPT2 model and tokenizer
-@st.cache_resource(show_spinner="Loading AI Model...") # More informative spinner
+@st.cache_resource(show_spinner=False)
 def load_model_and_tokenizer():
     model_dir = "/tmp/DistilGPT2_Model"
     if not download_model_files(model_dir):
-        st.error("Model download failed. Cannot proceed.")
-        st.stop() # Stop execution if download fails
+        st.error("Model download failed. Check your internet connection or GitHub URL.")
+        return None, None
 
-    try:
-        model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
-        tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
-        return model, tokenizer
-    except Exception as e:
-        st.error(f"Error loading model/tokenizer from {model_dir}: {e}")
-        st.error("Please check if the downloaded files are complete and valid.")
-        # Optionally, try deleting the cached directory and asking user to retry
-        # import shutil
-        # if os.path.exists(model_dir):
-        #     shutil.rmtree(model_dir)
-        # st.warning("Attempting to clear cached model directory. Please refresh the page to retry download.")
-        st.stop()
-
+    model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
+    tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
+    return model, tokenizer
 
 # Define static placeholders
 static_placeholders = {
@@ -154,7 +108,7 @@ static_placeholders = {
     "{{SEARCH_BUTTON}}": "<b>Search</b>",
     "{{SELL_TICKET_OPTION}}": "<b>Sell Ticket</b>",
     "{{SEND_BUTTON}}": "<b>Send</b>",
-    "{{SUPPORT_ SECTION}}": "<b>Support</b>", # Note: Space before SECTION here
+    "{{SUPPORT_ SECTION}}": "<b>Support</b>",
     "{{SUPPORT_CONTACT_LINK}}": "www.support-team.com",
     "{{SUPPORT_SECTION}}": "<b>Support</b>",
     "{{SUPPORT_TEAM_LINK}}": "www.support-team.com",
@@ -197,74 +151,38 @@ def extract_dynamic_placeholders(user_question, nlp):
         if ent.label_ == "EVENT":
             event_text = ent.text.title()
             dynamic_placeholders['{{EVENT}}'] = f"<b>{event_text}</b>"
-        elif ent.label_ == "GPE": # GPE (Geopolitical Entity) often captures cities/locations
+        elif ent.label_ == "GPE":
             city_text = ent.text.title()
             dynamic_placeholders['{{CITY}}'] = f"<b>{city_text}</b>"
-        # Add more entity types if needed (e.g., DATE, ORG)
-    # Provide defaults if not found
     if '{{EVENT}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{EVENT}}'] = "the event" # More generic default
+        dynamic_placeholders['{{EVENT}}'] = "event"
     if '{{CITY}}' not in dynamic_placeholders:
-        dynamic_placeholders['{{CITY}}'] = "your city" # More generic default
+        dynamic_placeholders['{{CITY}}'] = "city"
     return dynamic_placeholders
 
 # Generate a chatbot response using DistilGPT2
-# *** IMPORTANT NOTE ***: True interruption of model.generate() is complex and
-# often requires modifying the underlying library or using lower-level process control.
-# This implementation *simulates* stopping by checking a flag *before* and *after*
-# the generation call. The computation might still finish in the background
-# if the stop button is clicked mid-generation.
 def generate_response(model, tokenizer, instruction, max_length=256):
-    # Check if stop was requested *before* starting generation
-    if st.session_state.get("stop_requested", False):
-        return None # Indicate generation was stopped
-
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     input_text = f"Instruction: {instruction} Response:"
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
+    with torch.no_grad():
+        outputs = model.generate(
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_length=max_length,
+            num_return_sequences=1,
+            temperature=0.7,
+            top_p=0.95,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
+        )
+    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response_start = response.find("Response:") + len("Response:")
+    return response[response_start:].strip()
 
-    try:
-        with torch.no_grad():
-            outputs = model.generate(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-                max_length=max_length,
-                num_return_sequences=1,
-                temperature=0.7,
-                top_p=0.95,
-                do_sample=True,
-                pad_token_id=tokenizer.eos_token_id
-                # eos_token_id=tokenizer.eos_token_id # Ensure generation stops at EOS
-            )
-        # Check if stop was requested *during* generation (less effective for blocking calls)
-        if st.session_state.get("stop_requested", False):
-             return None # Indicate generation was stopped
-
-        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-        # Find the response part more reliably
-        response_marker = "Response:"
-        response_start_index = response.find(response_marker)
-        if response_start_index != -1:
-            final_response = response[response_start_index + len(response_marker):].strip()
-        else:
-            # Fallback if "Response:" marker is not found (e.g., model generates something unexpected)
-            # Try to remove the instruction part if possible
-            if response.startswith(input_text.replace(" Response:", "")):
-                 final_response = response[len(input_text.replace(" Response:", "")):].strip()
-            else:
-                 final_response = response # Return the whole output as a fallback
-
-        return final_response
-
-    except Exception as e:
-        st.error(f"Error during response generation: {e}")
-        return "Sorry, I encountered an error while generating the response."
-
-
-# --- CSS Styling (Unchanged) ---
+# CSS styling
 st.markdown(
     """
 <style>
@@ -300,7 +218,7 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Specific adjustments for Streamlit elements if needed */
+/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
@@ -313,95 +231,79 @@ st.markdown(
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. */
+.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent { /* For text inside expanders */
+.streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
-/* Style for the "Ask this question" button specifically */
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
-    color: white !important;
-}
-
-/* Horizontal line separator */
-    .horizontal-line {
-        border-top: 2px solid #e0e0e0;
-        margin: 15px 0;
-    }
-
-/* Chat Input Shadow Effect */
-div[data-testid="stChatInput"] {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border-radius: 5px;
-    padding: 10px;
-    margin: 10px 0; /* Adjusted margin */
-    position: relative; /* Needed for potential absolute positioning of stop button */
-}
-
-/* Style for the Stop button container */
-.stop-button-container {
-    text-align: center; /* Center the button */
-    margin-top: -5px; /* Pull it up slightly closer to input */
-    margin-bottom: 10px;
-    height: 40px; /* Reserve space even when hidden */
-}
-
-/* Style for the Stop button itself */
-.stop-button-container .stButton>button {
-    background-color: #dc3545 !important; /* Red background */
-    background-image: none !important; /* Override gradient */
-    border: 1px solid #dc3545;
-    color: white !important;
-    padding: 5px 15px; /* Smaller padding */
-    font-size: 1em; /* Smaller font size */
-    min-width: auto; /* Allow button to be smaller */
-    border-radius: 15px; /* Slightly less rounded */
-    font-weight: normal; /* Normal weight */
-}
-.stop-button-container .stButton>button:hover {
-    background-color: #c82333 !important; /* Darker red on hover */
-    border: 1px solid #bd2130;
-    box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.2);
-    transform: scale(1.03);
-}
-.stop-button-container .stButton>button:active {
-    background-color: #bd2130 !important;
-    transform: scale(0.99);
-}
-
 </style>
     """,
     unsafe_allow_html=True,
 )
 
+# Custom CSS for the "Ask this question" button
+st.markdown(
+    """
+<style>
+div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
+    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    color: white !important;
+}
+</style>
+    """,
+    unsafe_allow_html=True,
+)
 
-# --- Streamlit UI ---
+# Custom CSS for horizontal line separator
+st.markdown(
+    """
+<style>
+    .horizontal-line {
+        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+        margin: 15px 0; /* Adjust spacing above and below the line */
+    }
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# --- New CSS for Chat Input Shadow Effect ---
+st.markdown(
+    """
+<style>
+div[data-testid="stChatInput"] {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
+</style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# --- Session State Initialization ---
+# Initialize session state for controlling disclaimer visibility
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "is_generating" not in st.session_state:
-    st.session_state.is_generating = False # Tracks if the model is currently generating
-if "stop_requested" not in st.session_state:
-    st.session_state.stop_requested = False # Flag to signal stopping generation
 
-# --- Load Models ---
-# Moved model loading here to happen after potential disclaimer
-# Only load if chat is intended to be shown or already shown
-if st.session_state.show_chat or 'model' not in globals(): # Load only if needed
-    nlp = load_spacy_model()
-    model, tokenizer = load_model_and_tokenizer()
-    if model is None or tokenizer is None:
-        # Error handled within load_model_and_tokenizer using st.stop()
-        pass
+# Example queries for dropdown
+example_queries = [
+    "How do I buy a ticket?",
+    "How can I upgrade my ticket for the upcoming event in Hyderabad?",
+    "How do I change my personal details on my ticket?",
+    "How can I find details about upcoming events?",
+    "How do I contact customer service?",
+    "How do I get a refund?", 
+    "What is the ticket cancellation fee?",
+    "How can I track my ticket cancellation?",
+    "How can I sell my ticket?"
+]
 
-# --- Disclaimer Logic ---
+# Display Disclaimer and Continue button if chat hasn't started
 if not st.session_state.show_chat:
     st.markdown(
         """
@@ -436,149 +338,109 @@ if not st.session_state.show_chat:
         """,
         unsafe_allow_html=True
     )
-    col1, col2 = st.columns([4, 1])
+
+    # Continue button aligned to the right using columns
+    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
             st.rerun()
 
-# --- Main Chat Interface Logic ---
-elif st.session_state.show_chat:
+# Show chat interface only after clicking Continue
+if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
-    # Example queries section
-    example_queries = [
-        "How do I buy a ticket?",
-        "How can I upgrade my ticket for the upcoming event in Hyderabad?",
-        "How do I change my personal details on my ticket?",
-        "How can I find details about upcoming events?",
-        "How do I contact customer service?",
-        "How do I get a refund?",
-        "What is the ticket cancellation fee?",
-        "How can I track my ticket cancellation?",
-        "How can I sell my ticket?"
-    ]
-    col1, col2 = st.columns([3, 1]) # Adjust column ratio if needed
-    with col1:
-        selected_query = st.selectbox(
-            "Choose a query from examples:",
-            ["Choose your question"] + example_queries,
-            key="query_selectbox",
-            label_visibility="collapsed"
-        )
-    with col2:
-        process_query_button = st.button("Ask this question", key="query_button", disabled=st.session_state.is_generating)
+    # Dropdown and Button section at the TOP, before chat history and input
+    selected_query = st.selectbox(
+        "Choose a query from examples:",
+        ["Choose your question"] + example_queries,
+        key="query_selectbox",
+        label_visibility="collapsed"
+    )
+    process_query_button = st.button("Ask this question", key="query_button")
 
-    # Display chat history
-    last_role = None
+    # Initialize spaCy model for NER
+    nlp = load_spacy_model()
+
+    # Load DistilGPT2 model and tokenizer
+    model, tokenizer = load_model_and_tokenizer()
+    if model is None or tokenizer is None:
+        st.error("Failed to load the model.")
+        st.stop()
+
+    # Initialize chat history in session state
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    last_role = None # Track last message role
+
+    # Display chat messages from history
     for message in st.session_state.chat_history:
-        is_user = message["role"] == "user"
-        # Add separator only between user and assistant messages
-        if is_user and last_role == "assistant":
+        if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
-    # Container for the Stop button - placed between history and input
-    stop_button_placeholder = st.empty()
-    with stop_button_placeholder.container():
-        if st.session_state.is_generating:
-            st.markdown('<div class="stop-button-container">', unsafe_allow_html=True)
-            if st.button("⏹️ Stop Generation", key="stop_button"):
-                st.session_state.stop_requested = True
-                st.session_state.is_generating = False # Immediately reflect stop
-                # No rerun here, allow current script execution to potentially finish
-                # The check within generate_response and after will handle it.
-                st.toast("Stop request sent. Finishing current step...", icon="🛑")
-                # We might need a rerun later if generation is truly async, but not now.
-                # st.rerun() # Use cautiously, might interrupt display updates
-            st.markdown('</div>', unsafe_allow_html=True)
-        # else:
-            # Keep the container to maintain layout consistency, but empty
-            # st.markdown('<div class="stop-button-container"></div>', unsafe_allow_html=True)
+    # Process selected query from dropdown
+    if process_query_button:
+        if selected_query == "Choose your question":
+            st.error("⚠️ Please select your question from the dropdown.")
+        elif selected_query:
+            prompt_from_dropdown = selected_query
+            prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
 
+            st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
+            if last_role == "assistant":
+                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
+            last_role = "user"
 
-    # --- Function to handle sending a message and getting response ---
-    def handle_message(prompt_text):
-        if not prompt_text:
-            st.toast("⚠️ Please enter a question.")
-            return
-
-        prompt_text = prompt_text[0].upper() + prompt_text[1:] # Capitalize
-
-        # Append user message
-        st.session_state.chat_history.append({"role": "user", "content": prompt_text, "avatar": "👤"})
-        # Need to rerun to display user message immediately before generation starts
-        st.session_state.is_generating = True
-        st.session_state.stop_requested = False # Reset stop flag for new request
-        st.rerun() # Rerun to show user message and stop button
-
-    # --- Logic for processing after rerun when is_generating is True ---
-    if st.session_state.is_generating and not st.session_state.stop_requested:
-        # Find the last user message to generate response for
-        last_user_message = None
-        for msg in reversed(st.session_state.chat_history):
-            if msg["role"] == "user":
-                last_user_message = msg["content"]
-                break
-
-        if last_user_message:
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
-                full_response = "..." # Default in case of error
+                with st.spinner(generating_response_text):
+                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
 
-                try:
-                    with st.spinner(generating_response_text):
-                        # Check stop flag again just before the call
-                        if st.session_state.stop_requested:
-                             full_response = "Generation stopped by user."
-                        else:
-                            dynamic_placeholders = extract_dynamic_placeholders(last_user_message, nlp)
-                            response_gpt = generate_response(model, tokenizer, last_user_message)
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+            last_role = "assistant"
 
-                            # Check stop flag immediately after the call
-                            if st.session_state.stop_requested or response_gpt is None:
-                                full_response = "Generation stopped by user."
-                            else:
-                                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                                if not full_response: # Handle empty generation
-                                     full_response = "Sorry, I couldn't generate a specific response for that. Can you please rephrase?"
+    # Input box at the bottom
+    if prompt := st.chat_input("Enter your own question:"):
+        prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
+        if not prompt.strip():
+            st.toast("⚠️ Please enter a question.")
+        else:
+            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
+            if last_role == "assistant":
+                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+            with st.chat_message("user", avatar="👤"):
+                st.markdown(prompt, unsafe_allow_html=True)
+            last_role = "user"
 
-                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                    st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+            with st.chat_message("assistant", avatar="🤖"):
+                message_placeholder = st.empty()
+                generating_response_text = "Generating response..."
+                with st.spinner(generating_response_text):
+                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
 
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-                    full_response = "Sorry, there was an error processing your request."
-                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                    st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-                finally:
-                    # Generation finished or was stopped, reset flags
-                    st.session_state.is_generating = False
-                    st.session_state.stop_requested = False
-                    # Rerun one last time to update the UI state (hide stop button, etc.)
-                    st.rerun() # This ensures the stop button disappears correctly
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+            last_role = "assistant"
 
-    # --- Input Handling ---
-
-    # Handle example query button press
-    if process_query_button and selected_query != "Choose your question":
-        handle_message(selected_query)
-    elif process_query_button and selected_query == "Choose your question":
-         st.toast("⚠️ Please select your question from the dropdown.")
-
-
-    # Handle chat input
-    if prompt := st.chat_input("Enter your own question:", key="chat_input_box", disabled=st.session_state.is_generating):
-        handle_message(prompt)
-
-
-    # --- Reset Button ---
+    # Conditionally display reset button
     if st.session_state.chat_history:
-        if st.button("Reset Chat", key="reset_button", disabled=st.session_state.is_generating):
+        if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
-            st.session_state.is_generating = False
-            st.session_state.stop_requested = False
+            last_role = None
             st.rerun()
+
+
