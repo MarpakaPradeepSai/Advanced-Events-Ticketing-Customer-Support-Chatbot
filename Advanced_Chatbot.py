@@ -160,27 +160,34 @@ def extract_dynamic_placeholders(user_question, nlp):
         dynamic_placeholders['{{CITY}}'] = "city"
     return dynamic_placeholders
 
-# Generate a chatbot response using DistilGPT2
-def generate_response(model, tokenizer, instruction, max_length=256):
+# Generate a chatbot response token by token
+def generate_response_stream(model, tokenizer, instruction, max_length=256):
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     input_text = f"Instruction: {instruction} Response:"
-    inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-    with torch.no_grad():
-        outputs = model.generate(
-            input_ids=inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_length=max_length,
-            num_return_sequences=1,
-            temperature=0.7,
-            top_p=0.95,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    response_start = response.find("Response:") + len("Response:")
-    return response[response_start:].strip()
+    input_ids = tokenizer.encode(input_text, return_tensors="pt").to(device)
+    attention_mask = torch.ones_like(input_ids).to(device)
+
+    generated_ids = input_ids
+    response_start = len(input_text)
+    for _ in range(max_length):
+        with torch.no_grad():
+            outputs = model(input_ids=generated_ids, attention_mask=attention_mask)
+            logits = outputs.logits[:, -1, :]
+            next_token_id = torch.argmax(logits, dim=-1).unsqueeze(0)
+            generated_ids = torch.cat((generated_ids, next_token_id), dim=1)
+            attention_mask = torch.cat((attention_mask, torch.ones_like(next_token_id)), dim=1)
+
+        generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+        if generated_text.startswith(input_text):
+            response_text = generated_text[response_start:]
+        else:
+            response_text = generated_text  # Fallback
+        yield response_text
+
+        if next_token_id[0].item() == tokenizer.eos_token_id:
+            break
 
 # CSS styling
 st.markdown(
@@ -236,6 +243,19 @@ st.markdown(
 }
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* Style for stop button */
+[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    background: none;
+    border: none;
+    padding: 0;
+    min-width: 30px;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    margin-left: 10px;
+    vertical-align: middle;
 }
 </style>
     """,
@@ -368,11 +388,13 @@ if st.session_state.show_chat:
         st.error("Failed to load the model.")
         st.stop()
 
-    # Initialize chat history in session state
+    # Initialize chat history and stop generation flag in session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+    if "stop_generation" not in st.session_state:
+        st.session_state.stop_generation = False
 
-    last_role = None # Track last message role
+    last_role = None  # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -394,19 +416,37 @@ if st.session_state.show_chat:
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
             with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
+                col1, col2 = st.columns([10, 1])
+                with col1:
+                    st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
+                with col2:
+                    stop_button_placeholder = st.empty()
+
             last_role = "user"
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                st.session_state.stop_generation = False
+                with stop_button_placeholder:
+                    if st.button("🛑", key="stop_button_dropdown"):
+                        st.session_state.stop_generation = True
 
+                raw_response = ""
+                for partial_response in generate_response_stream(model, tokenizer, prompt_from_dropdown):
+                    raw_response = partial_response
+                    message_placeholder.markdown(raw_response, unsafe_allow_html=True)
+                    time.sleep(0.05)
+                    if st.session_state.stop_generation:
+                        break
+
+                # After generation, apply placeholder replacement
+                final_raw_response = raw_response.strip()
+                dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                full_response = replace_placeholders(final_raw_response, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
+
+                stop_button_placeholder.empty()
+
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
@@ -420,19 +460,37 @@ if st.session_state.show_chat:
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
             with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt, unsafe_allow_html=True)
+                col1, col2 = st.columns([10, 1])
+                with col1:
+                    st.markdown(prompt, unsafe_allow_html=True)
+                with col2:
+                    stop_button_placeholder = st.empty()
+
             last_role = "user"
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
+                st.session_state.stop_generation = False
+                with stop_button_placeholder:
+                    if st.button("🛑", key="stop_button_chat"):
+                        st.session_state.stop_generation = True
 
+                raw_response = ""
+                for partial_response in generate_response_stream(model, tokenizer, prompt):
+                    raw_response = partial_response
+                    message_placeholder.markdown(raw_response, unsafe_allow_html=True)
+                    time.sleep(0.05)
+                    if st.session_state.stop_generation:
+                        break
+
+                # After generation, apply placeholder replacement
+                final_raw_response = raw_response.strip()
+                dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                full_response = replace_placeholders(final_raw_response, dynamic_placeholders, static_placeholders)
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
+
+                stop_button_placeholder.empty()
+
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
@@ -442,5 +500,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
