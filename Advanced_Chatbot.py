@@ -168,11 +168,11 @@ def generate_response(model, tokenizer, instruction, stop_event, max_length=256)
     model.to(device)
     input_text = f"Instruction: {instruction} Response:"
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-    
+
     # Check if generation should be stopped
     if stop_event.is_set():
         return "Generation stopped by user."
-    
+
     try:
         with torch.no_grad():
             outputs = model.generate(
@@ -253,8 +253,8 @@ st.markdown(
     color: white !important;
     border: none !important;
     border-radius: 50% !important;
-    width: 36px !important;
-    height: 36px !important;
+    width: 40px !important; /* Adjusted width to 40px */
+    height: 40px !important; /* Adjusted height to 40px */
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -268,6 +268,10 @@ st.markdown(
 .stop-button:hover {
     background-color: #ff2c2c !important;
     transform: scale(1.1) !important;
+}
+
+.stop-button:active {
+    transform: scale(0.98); /* Slightly smaller when clicked */
 }
 
 .stop-button-container {
@@ -361,7 +365,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation?",
     "How can I sell my ticket?"
@@ -421,7 +425,7 @@ if st.session_state.show_chat:
         key="query_selectbox",
         label_visibility="collapsed"
     )
-    
+
     # Horizontal layout for Ask button and Stop button
     col1, col2 = st.columns([6, 1])  # Adjust ratio as needed
     with col1:
@@ -450,12 +454,12 @@ if st.session_state.show_chat:
     def generate_response_thread(prompt, message_placeholder, stop_event):
         dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
         response_gpt = generate_response(model, tokenizer, prompt, stop_event)
-        
+
         if stop_event.is_set():
             full_response = "Response generation stopped by user."
         else:
             full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-        
+
         message_placeholder.markdown(full_response, unsafe_allow_html=True)
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
         st.session_state.is_generating = False
@@ -469,7 +473,7 @@ if st.session_state.show_chat:
         elif selected_query:
             # Reset stop event
             st.session_state.stop_generation.clear()
-            
+
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
 
@@ -482,13 +486,13 @@ if st.session_state.show_chat:
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                
+
                 # Set is_generating flag to true
                 st.session_state.is_generating = True
-                
+
                 # Create a container for the generating text and stop button
                 generating_container = st.container()
-                
+
                 with generating_container:
                     cols = st.columns([5, 1])
                     with cols[0]:
@@ -497,7 +501,7 @@ if st.session_state.show_chat:
                         if st.button("⬛", key="stop_button_dropdown", help="Stop generation"):
                             st.session_state.stop_generation.set()
                             st.info("Stopping generation...")
-                
+
                 # Start the generation in a separate thread
                 generation_thread = threading.Thread(
                     target=generate_response_thread,
@@ -510,7 +514,7 @@ if st.session_state.show_chat:
     if prompt := st.chat_input("Enter your own question:"):
         # Reset stop event
         st.session_state.stop_generation.clear()
-        
+
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.")
@@ -524,13 +528,13 @@ if st.session_state.show_chat:
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                
+
                 # Set is_generating flag to true
                 st.session_state.is_generating = True
-                
+
                 # Create a container for the generating text and stop button
                 generating_container = st.container()
-                
+
                 with generating_container:
                     cols = st.columns([5, 1])
                     with cols[0]:
@@ -539,7 +543,7 @@ if st.session_state.show_chat:
                         if st.button("⬛", key="stop_button_chat", help="Stop generation"):
                             st.session_state.stop_generation.set()
                             st.info("Stopping generation...")
-                
+
                 # Start the generation in a separate thread
                 generation_thread = threading.Thread(
                     target=generate_response_thread,
