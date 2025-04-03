@@ -1,6 +1,6 @@
 import streamlit as st
 import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, StoppingCriteria, StoppingCriteriaList
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
 import requests
 import os
 import spacy
@@ -43,13 +43,6 @@ def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
 def load_spacy_model():
     nlp = spacy.load("en_core_web_trf")
     return nlp
-
-# Custom stopping criteria that checks a flag in st.session_state
-class StopOnSignal(StoppingCriteria):
-    def __call__(self, input_ids, scores, **kwargs):
-        if st.session_state.get("stop_generation", False):
-            return True
-        return False
 
 # Load the DistilGPT2 model and tokenizer
 @st.cache_resource(show_spinner=False)
@@ -167,18 +160,13 @@ def extract_dynamic_placeholders(user_question, nlp):
         dynamic_placeholders['{{CITY}}'] = "city"
     return dynamic_placeholders
 
-# Generate a chatbot response using DistilGPT2 with stopping criteria
+# Generate a chatbot response using DistilGPT2
 def generate_response(model, tokenizer, instruction, max_length=256):
-    st.session_state.stop_generation = False  # initialize stop flag
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     input_text = f"Instruction: {instruction} Response:"
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
-
-    # Define stopping criteria list that checks for the stop flag
-    stopping_criteria = StoppingCriteriaList([StopOnSignal()])
-
     with torch.no_grad():
         outputs = model.generate(
             input_ids=inputs["input_ids"],
@@ -188,13 +176,10 @@ def generate_response(model, tokenizer, instruction, max_length=256):
             temperature=0.7,
             top_p=0.95,
             do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
-            stopping_criteria=stopping_criteria
+            pad_token_id=tokenizer.eos_token_id
         )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response_start = response.find("Response:") + len("Response:")
-    # Reset the stop flag after generation
-    st.session_state.stop_generation = False
     return response[response_start:].strip()
 
 # CSS styling
@@ -202,34 +187,38 @@ st.markdown(
     """
 <style>
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71);
-    color: white !important;
+    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
+    color: white !important; /* Ensure text is white */
     border: none;
-    border-radius: 25px;
-    padding: 10px 20px;
-    font-size: 1.2em;
-    font-weight: bold;
+    border-radius: 25px; /* Rounded corners */
+    padding: 10px 20px; /* Padding */
+    font-size: 1.2em; /* Font size */
+    font-weight: bold; /* Bold text */
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    display: inline-flex;
+    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
+    display: inline-flex; /* Helps with alignment */
     align-items: center;
     justify-content: center;
-    margin-top: 5px;
-    width: auto;
-    min-width: 100px;
-    font-family: 'Times New Roman', Times, serif !important;
+    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
+    width: auto; /* Fit content width */
+    min-width: 100px; /* Optional: ensure a minimum width */
+    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
 }
 .stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-    color: white !important;
+    transform: scale(1.05); /* Slightly larger on hover */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
+    color: white !important; /* Ensure text stays white on hover */
 }
 .stButton>button:active {
-    transform: scale(0.98);
+    transform: scale(0.98); /* Slightly smaller when clicked */
 }
+
+/* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
+
+/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
@@ -242,10 +231,10 @@ st.markdown(
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms {
+.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent {
+.streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
 </style>
@@ -253,12 +242,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Custom CSS for the "Ask this question" button (if needed)
+# Custom CSS for the "Ask this question" button
 st.markdown(
     """
 <style>
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6);
+    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
     color: white !important;
 }
 </style>
@@ -271,15 +260,15 @@ st.markdown(
     """
 <style>
     .horizontal-line {
-        border-top: 2px solid #e0e0e0;
-        margin: 15px 0;
+        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+        margin: 15px 0; /* Adjust spacing above and below the line */
     }
 </style>
     """,
     unsafe_allow_html=True,
 )
 
-# New CSS for Chat Input Shadow Effect
+# --- New CSS for Chat Input Shadow Effect ---
 st.markdown(
     """
 <style>
@@ -351,7 +340,7 @@ if not st.session_state.show_chat:
     )
 
     # Continue button aligned to the right using columns
-    col1, col2 = st.columns([4, 1])
+    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
@@ -362,20 +351,13 @@ if st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
 
     # Dropdown and Button section at the TOP, before chat history and input
-    st.markdown("### Select a Query")
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        selected_query = st.selectbox(
-            "Choose a query from examples:",
-            ["Choose your question"] + example_queries,
-            key="query_selectbox",
-            label_visibility="collapsed"
-        )
-    # Process Query and Stop buttons on the same line
-    with col2:
-        process_query_button = st.button("Ask this question", key="query_button")
-        # The stop button shows the ⏹️ symbol. When clicked, it sets a flag to stop generation.
-        stop_button = st.button("⏹️", key="stop_button", on_click=lambda: st.session_state.update({"stop_generation": True}))
+    selected_query = st.selectbox(
+        "Choose a query from examples:",
+        ["Choose your question"] + example_queries,
+        key="query_selectbox",
+        label_visibility="collapsed"
+    )
+    process_query_button = st.button("Ask this question", key="query_button")
 
     # Initialize spaCy model for NER
     nlp = load_spacy_model()
@@ -390,7 +372,7 @@ if st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None  # Track last message role
+    last_role = None # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -417,12 +399,13 @@ if st.session_state.show_chat:
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                # The spinner and stop button are visible during response generation.
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
+
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -445,8 +428,10 @@ if st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    # time.sleep(1) # Optional delay
+
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -457,3 +442,5 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
+
+
