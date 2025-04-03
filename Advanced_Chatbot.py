@@ -196,46 +196,9 @@ if prompt := st.chat_input("Enter your own question:"):
         st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
         last_role = "assistant"
 
-# Rest of the code remains the same...
-
-    # Input box at the bottom
-    if prompt := st.chat_input("Enter your own question:", disabled=st.session_state.generating_response):
-        prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
-        if not prompt.strip():
-            st.toast("⚠️ Please enter a question.")
-        else:
-            st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
-            if last_role == "assistant":
-                st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-            with st.chat_message("user", avatar="👤"):
-                st.markdown(prompt, unsafe_allow_html=True)
-            last_role = "user"
-
-            with st.chat_message("assistant", avatar="🤖"):
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                message_placeholder.markdown(generating_response_text) # Initial text
-                st.session_state.generating_response = True
-                st.session_state.stop_generation = False # Reset stop flag before new generation
-
-                dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-
-                if st.session_state.stop_generation:
-                    full_response = "Response generation stopped." # Indicate that response was stopped
-                    st.session_state.stop_generation = False # Reset stop flag
-                st.session_state.generating_response = False # Generation finished, set to false
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
-
     # Conditionally display reset button
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
             last_role = None
-            st.session_state.generating_response = False
-            st.session_state.stop_generation = False
             st.rerun()
