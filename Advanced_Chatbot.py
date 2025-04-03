@@ -300,7 +300,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation?",
     "How can I sell my ticket?"
@@ -315,7 +315,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -428,6 +428,14 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
+            # Scroll to bottom after assistant response
+            st.components.v1.html(f"""
+                <script>
+                    window.parent.scrollTo(0, document.body.scrollHeight);
+                </script>
+                """,
+                height=0,
+            )
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
@@ -454,6 +462,14 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
+            # Scroll to bottom after assistant response
+            st.components.v1.html(f"""
+                <script>
+                    window.parent.scrollTo(0, document.body.scrollHeight);
+                </script>
+                """,
+                height=0,
+            )
 
     # Conditionally display reset button
     if st.session_state.chat_history:
