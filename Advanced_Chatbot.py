@@ -5,6 +5,7 @@ import requests
 import os
 import spacy
 import time
+import streamlit.components.v1 as components
 
 # GitHub directory containing the DistilGPT2 model files
 GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketing-Customer-Support-Chatbot/raw/main/DistilGPT2_Model"
@@ -300,7 +301,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation?",
     "How can I sell my ticket?"
@@ -315,7 +316,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -455,9 +456,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
-    # Conditionally display reset button
+    # Conditionally display buttons
     if st.session_state.chat_history:
-        if st.button("Reset Chat", key="reset_button"):
-            st.session_state.chat_history = []
-            last_role = None
-            st.rerun()
+        col1, col2 = st.columns([1, 1]) # create two columns for buttons
+        with col1:
+            if st.button("Reset Chat", key="reset_button"):
+                st.session_state.chat_history = []
+                last_role = None
+                st.rerun()
+        with col2:
+            if st.button("Scroll to Bottom", key="scroll_to_bottom_button"):
+                components.html(
+                    """
+                    <script>
+                        window.parent.document.querySelector(".streamlit-container").scrollTop = window.parent.document.querySelector(".streamlit-container").scrollHeight;
+                    </script>
+                    """,
+                    height=0,
+                )
