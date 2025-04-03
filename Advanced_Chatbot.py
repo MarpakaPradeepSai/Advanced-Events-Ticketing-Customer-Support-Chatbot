@@ -237,6 +237,39 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
+
+/* Stop button styling */
+.stop-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.stop-button:hover {
+    background-color: #e0e0e0;
+}
+.stop-button-symbol {
+    width: 14px;
+    height: 14px;
+    background-color: #333;
+    border-radius: 2px;
+}
+.stop-container {
+    display: flex;
+    align-items: center;
+    margin-top: 8px;
+}
+.generating-text {
+    margin-right: 10px;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -286,9 +319,13 @@ div[data-testid="stChatInput"] {
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility
+# Initialize session state for controlling disclaimer visibility and generation state
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
+if "is_generating" not in st.session_state:
+    st.session_state.is_generating = False
+if "stop_generation" not in st.session_state:
+    st.session_state.stop_generation = False
 
 # Example queries for dropdown
 example_queries = [
@@ -399,16 +436,44 @@ if st.session_state.show_chat:
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
+                generating_container = st.empty()
+                
+                # Set generating flag to true
+                st.session_state.is_generating = True
+                st.session_state.stop_generation = False
+                
+                # Display "Generating response..." with stop button
+                generating_container.markdown(
+                    """
+                    <div class="stop-container">
+                        <div class="generating-text">Generating response...</div>
+                        <button class="stop-button" id="stop-gen-btn" onclick="document.getElementById('stop-gen-hidden').click()">
+                            <div class="stop-button-symbol"></div>
+                        </button>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                # Hidden button to trigger the stop action
+                if st.button("Stop", key="stop-gen-hidden", style="display:none;"):
+                    st.session_state.stop_generation = True
+                
+                # Generate response if not stopped
+                if not st.session_state.stop_generation:
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                else:
+                    message_placeholder.markdown("*Generation stopped.*", unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": "*Generation stopped.*", "avatar": "🤖"})
+                
+                # Clear the generating message and stop button
+                generating_container.empty()
+                st.session_state.is_generating = False
+                last_role = "assistant"
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
@@ -425,16 +490,44 @@ if st.session_state.show_chat:
 
             with st.chat_message("assistant", avatar="🤖"):
                 message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
+                generating_container = st.empty()
+                
+                # Set generating flag to true
+                st.session_state.is_generating = True
+                st.session_state.stop_generation = False
+                
+                # Display "Generating response..." with stop button
+                generating_container.markdown(
+                    """
+                    <div class="stop-container">
+                        <div class="generating-text">Generating response...</div>
+                        <button class="stop-button" id="stop-gen-btn" onclick="document.getElementById('stop-gen-user').click()">
+                            <div class="stop-button-symbol"></div>
+                        </button>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                # Hidden button to trigger the stop action
+                if st.button("Stop", key="stop-gen-user", style="display:none;"):
+                    st.session_state.stop_generation = True
+                
+                # Generate response if not stopped
+                if not st.session_state.stop_generation:
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    # time.sleep(1) # Optional delay
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                    response_gpt = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                else:
+                    message_placeholder.markdown("*Generation stopped.*", unsafe_allow_html=True)
+                    st.session_state.chat_history.append({"role": "assistant", "content": "*Generation stopped.*", "avatar": "🤖"})
+                
+                # Clear the generating message and stop button
+                generating_container.empty()
+                st.session_state.is_generating = False
+                last_role = "assistant"
 
     # Conditionally display reset button
     if st.session_state.chat_history:
@@ -442,5 +535,3 @@ if st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
