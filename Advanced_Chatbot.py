@@ -302,7 +302,7 @@ example_queries = [
     "How do I contact customer service?",
     "How do I get a refund?", 
     "What is the ticket cancellation fee?",
-    "How can I track my ticket cancellation?",
+    "How can I track my ticket cancellation status?",
     "How can I sell my ticket?"
 ]
 
@@ -461,5 +461,3 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             st.session_state.chat_history = []
             last_role = None
             st.rerun()
-
-
