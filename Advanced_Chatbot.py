@@ -11,13 +11,13 @@ GITHUB_MODEL_URL = "https://github.com/MarpakaPradeepSai/Advanced-Events-Ticketi
 
 # List of model files to download
 MODEL_FILES = [
-    "config.json",
-    "generation_config.json",
-    "merges.txt",
-    "model.safetensors",
-    "special_tokens_map.json",
-    "tokenizer_config.json",
-    "vocab.json"
+"config.json",
+"generation_config.json",
+"merges.txt",
+"model.safetensors",
+"special_tokens_map.json",
+"tokenizer_config.json",
+"vocab.json"
 ]
 
 # Function to download model files from GitHub
@@ -238,7 +238,7 @@ st.markdown(
     font-family: 'Times New Roman', Times, serif !important;
 }
 </style>
-    """,
+""",
     unsafe_allow_html=True,
 )
 
@@ -251,7 +251,7 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-t
     color: white !important;
 }
 </style>
-    """,
+""",
     unsafe_allow_html=True,
 )
 
@@ -259,12 +259,12 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-t
 st.markdown(
     """
 <style>
-    .horizontal-line {
-        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-        margin: 15px 0; /* Adjust spacing above and below the line */
-    }
+.horizontal-line {
+    border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
+    margin: 15px 0; /* Adjust spacing above and below the line */
+}
 </style>
-    """,
+""",
     unsafe_allow_html=True,
 )
 
@@ -279,7 +279,7 @@ div[data-testid="stChatInput"] {
     margin: 10px 0;
 }
 </style>
-    """,
+""",
     unsafe_allow_html=True,
 )
 
@@ -300,7 +300,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation status?",
     "How can I sell my ticket?"
@@ -315,7 +315,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -330,35 +330,35 @@ if not st.session_state.models_loaded:
 if st.session_state.models_loaded and not st.session_state.show_chat:
     st.markdown(
         """
-        <div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
-            <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                This <b>Chatbot</b> has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
-            </p>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                The chatbot is optimized to handle the following intents:
-            </p>
-            <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                <li>Cancel Ticket</li>
-                <li>Buy Ticket</li>
-                <li>Sell Ticket</li>
-                <li>Transfer Ticket</li>
-                <li>Upgrade Ticket</li>
-                <li>Find Ticket</li>
-                <li>Change Personal Details on Ticket</li>
-                <li>Get Refund</li>
-                <li>Find Upcoming Events</li>
-                <li>Customer Service</li>
-                <li>Check Cancellation Fee</li>
-                <li>Track Cancellation</li>
-                <li>Ticket Information</li>
-            </ul>
-            <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
-                Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
-                Even if the model fails to provide accurate responses from the predefined intents, we kindly ask for your patience and encourage you to try again.
-            </p>
-        </div>
-        """,
+<div style="background-color: #f8d7da; padding: 20px; border-radius: 10px; color: #721c24; border: 1px solid #f5c6cb; font-family: Arial, sans-serif;">
+    <h1 style="font-size: 36px; color: #721c24; font-weight: bold; text-align: center;">⚠️Disclaimer</h1>
+    <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+        This <b>Chatbot</b> has been designed to assist users with a variety of ticketing-related inquiries. However, due to computational limitations, this model has been fine-tuned on a select set of intents, and may not be able to respond accurately to all types of queries.
+    </p>
+    <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+        The chatbot is optimized to handle the following intents:
+    </p>
+    <ul style="font-size: 16px; line-height: 1.6; color: #721c24;">
+        <li>Cancel Ticket</li>
+        <li>Buy Ticket</li>
+        <li>Sell Ticket</li>
+        <li>Transfer Ticket</li>
+        <li>Upgrade Ticket</li>
+        <li>Find Ticket</li>
+        <li>Change Personal Details on Ticket</li>
+        <li>Get Refund</li>
+        <li>Find Upcoming Events</li>
+        <li>Customer Service</li>
+        <li>Check Cancellation Fee</li>
+        <li>Track Cancellation</li>
+        <li>Ticket Information</li>
+    </ul>
+    <p style="font-size: 16px; line-height: 1.6; color: #721c24;">
+        Please note that this chatbot may not be able to assist with queries outside of these predefined intents.
+        Even if the model fails to provide accurate responses from the predefined intents, we kindly ask for your patience and encourage you to try again.
+    </p>
+</div>
+""",
         unsafe_allow_html=True
     )
 
@@ -391,14 +391,19 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None  # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
-            st.markdown(message["content"], unsafe_allow_html=True)
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.markdown(message["content"], unsafe_allow_html=True)
+            if "response_time" in message and message["role"] == "assistant":
+                with col2:
+                    st.caption(f"{message['response_time']:.2f}s")
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -420,14 +425,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
+                    start_time = time.time()
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)  # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)  # Use response_gpt
+                    end_time = time.time()
+                    response_time = end_time - start_time
                     # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                with col2:
+                    message_placeholder.caption(f"{response_time:.2f}s")
+                st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "response_time": response_time})
+                last_role = "assistant"
 
     # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
@@ -446,14 +458,22 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
+                    start_time = time.time()
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt = generate_response(model, tokenizer, prompt)  # Use different variable name
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)  # Use response_gpt
+                    end_time = time.time()
+                    response_time = end_time - start_time
                     # time.sleep(1) # Optional delay
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
-            last_role = "assistant"
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                with col2:
+                    message_placeholder.caption(f"{response_time:.2f}s")
+
+                st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "response_time": response_time})
+                last_role = "assistant"
 
     # Conditionally display reset button
     if st.session_state.chat_history:
