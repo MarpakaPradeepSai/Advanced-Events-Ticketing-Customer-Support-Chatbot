@@ -242,8 +242,9 @@ st.markdown(
 .response-time {
     font-size: 12px;
     color: #666;
-    margin-left: 5px;
-    display: inline-block;
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 6px;
 }
 </style>
     """,
@@ -432,21 +433,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     start_time = time.time()
                     
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                     
                     # Calculate response time
                     end_time = time.time()
                     response_time = end_time - start_time
-                    response_time_formatted = f"<span class='response-time'>({response_time:.1f}s)</span>"
+                    response_time_formatted = f"<div class='response-time'>Response time: {response_time:.1f}s</div>"
                 
-                # Display response with the response time
-                message_placeholder.markdown(f"🤖 {response_time_formatted} {full_response}", unsafe_allow_html=True)
+                # Display response with the response time below the chatbot icon
+                message_placeholder.markdown(f"{response_time_formatted}{full_response}", unsafe_allow_html=True)
             
             # Store response with response time in chat history
             st.session_state.chat_history.append({
                 "role": "assistant", 
-                "content": f"🤖 {response_time_formatted} {full_response}", 
+                "content": f"{response_time_formatted}{full_response}", 
                 "avatar": "🤖"
             })
             last_role = "assistant"
@@ -472,21 +473,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     start_time = time.time()
                     
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                     
                     # Calculate response time
                     end_time = time.time()
                     response_time = end_time - start_time
-                    response_time_formatted = f"<span class='response-time'>({response_time:.1f}s)</span>"
+                    response_time_formatted = f"<div class='response-time'>Response time: {response_time:.1f}s</div>"
 
-                # Display response with the response time
-                message_placeholder.markdown(f"🤖 {response_time_formatted} {full_response}", unsafe_allow_html=True)
+                # Display response with the response time below the chatbot icon
+                message_placeholder.markdown(f"{response_time_formatted}{full_response}", unsafe_allow_html=True)
             
             # Store response with response time in chat history
             st.session_state.chat_history.append({
                 "role": "assistant", 
-                "content": f"🤖 {response_time_formatted} {full_response}", 
+                "content": f"{response_time_formatted}{full_response}", 
                 "avatar": "🤖"
             })
             last_role = "assistant"
