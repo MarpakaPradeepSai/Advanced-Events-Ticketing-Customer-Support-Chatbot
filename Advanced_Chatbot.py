@@ -399,8 +399,6 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
-            if "response_time" in message and message["role"] == "assistant":
-                st.caption(f"Response time: {message['response_time']:.2f} seconds")
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -428,12 +426,11 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     end_time = time.time() # End time after response generation
                     response_time = end_time - start_time # Calculate response time
-                    # time.sleep(1) # Optional delay
+                    response_time_str = f"({response_time:.2f}s)" # Format response time
+                    full_response_with_time = f"{full_response}  <br> <span style='font-size: 0.8em; color: grey;'>{response_time_str}</span>" # Add response time to response
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                st.caption(f"Response time: {response_time:.2f} seconds") # Display response time
-
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "response_time": response_time}) # Store response time
+                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
             last_role = "assistant"
 
     # Input box at the bottom
@@ -459,12 +456,11 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     end_time = time.time() # End time after response generation
                     response_time = end_time - start_time # Calculate response time
-                    # time.sleep(1) # Optional delay
+                    response_time_str = f"({response_time:.2f}s)" # Format response time
+                    full_response_with_time = f"{full_response}  <br> <span style='font-size: 0.8em; color: grey;'>{response_time_str}</span>" # Add response time to response
 
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                st.caption(f"Response time: {response_time:.2f} seconds") # Display response time
-
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "response_time": response_time}) # Store response time
+                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
             last_role = "assistant"
 
     # Conditionally display reset button
