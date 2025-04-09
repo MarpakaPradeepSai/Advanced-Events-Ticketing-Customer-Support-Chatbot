@@ -240,14 +240,16 @@ st.markdown(
 
 /* Custom style for response time badge */
 .response-time-badge {
-    display: inline-block;
+    display: block;
+    text-align: center;
     background-color: rgba(128, 128, 128, 0.2);
     color: #555;
     border-radius: 10px;
     padding: 2px 8px;
     font-size: 12px;
-    margin-left: 5px;
-    vertical-align: middle;
+    margin-top: 2px;
+    margin-bottom: 5px;
+    width: fit-content;
 }
 </style>
     """,
@@ -441,10 +443,10 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     
                     # Calculate response time
                     response_time = time.time() - start_time
-                    response_time_formatted = f"<span class='response-time-badge'>({response_time:.1f}s)</span>"
+                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
                     
-                    # Add response time badge to the message
-                    full_response_with_time = f"🤖 {response_time_formatted}<br>{full_response}"
+                    # Add response time badge below the message
+                    full_response_with_time = f"{response_time_formatted}{full_response}"
 
                 message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
@@ -476,10 +478,10 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     
                     # Calculate response time
                     response_time = time.time() - start_time
-                    response_time_formatted = f"<span class='response-time-badge'>({response_time:.1f}s)</span>"
+                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
                     
-                    # Add response time badge to the message
-                    full_response_with_time = f"🤖 {response_time_formatted}<br>{full_response}"
+                    # Add response time badge below the message
+                    full_response_with_time = f"{response_time_formatted}{full_response}"
 
                 message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
             st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
