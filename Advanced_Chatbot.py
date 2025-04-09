@@ -428,7 +428,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
 
-                message_placeholder.markdown(f"{full_response} <span style='font-size: 0.8em; color: grey;'>{response_time_formatted}</span>", unsafe_allow_html=True) # Display response time
+                message_placeholder.markdown(f"{full_response} <div style='font-size: 0.8em; color: grey; margin-top: -8px;'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True) # Display response time below
 
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -455,7 +455,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
                     response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
 
-                message_placeholder.markdown(f"{full_response} <span style='font-size: 0.8em; color: grey;'>{response_time_formatted}</span>", unsafe_allow_html=True) # Display response time
+                message_placeholder.markdown(f"{full_response} <div style='font-size: 0.8em; color: grey; margin-top: -8px;'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True) # Display response time below
 
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
