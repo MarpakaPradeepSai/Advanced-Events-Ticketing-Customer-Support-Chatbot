@@ -268,7 +268,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- New CSS for Chat Input Shadow Effect ---
+# New CSS for Chat Input Shadow Effect
 st.markdown(
     """
 <style>
@@ -363,7 +363,7 @@ if st.session_state.models_loaded and not st.session_state.show_chat:
     )
 
     # Continue button aligned to the right using columns
-    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
+    col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
@@ -391,14 +391,20 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None  # Track last message role
+    last_role = None # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
-            st.markdown(message["content"], unsafe_allow_html=True)
+            if message["role"] == "assistant":
+                # Display time taken below the icon
+                time_taken = message.get("time_taken", 0)
+                st.markdown(f"<span style='color: gray; font-size: 0.8em;'>Response Time: {time_taken:.1f}s</span>", unsafe_allow_html=True)
+                st.markdown(message["content"], unsafe_allow_html=True)
+            else:
+                st.markdown(message["content"], unsafe_allow_html=True)
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -409,7 +415,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
 
-            st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
+            st.session_state.chat_history.append({"role": "user", "contentEprompt_from_dropdown, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
             with st.chat_message("user", avatar="👤"):
@@ -420,16 +426,15 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
+                    start_time = time.time()
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    start_time = time.time()  # Start timer
                     response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
-                    end_time = time.time()    # End timer
-                    elapsed_time = round(end_time - start_time, 1)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    full_response += f" ({elapsed_time}s)"  # Append response time
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                    end_time = time.time()
+                    time_taken = end_time - start_time
+                # Display time taken and response separately
+                message_placeholder.markdown(f"<span style='color: gray; font-size: 0.8em;'>Response Time: {time_taken:.1f}s</span><br>{full_response}", unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "time_taken": time_taken, "avatar": "🤖"})
             last_role = "assistant"
 
     # Input box at the bottom
@@ -449,16 +454,15 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
+                    start_time = time.time()
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    start_time = time.time()  # Start timer
                     response_gpt = generate_response(model, tokenizer, prompt)
-                    end_time = time.time()    # End timer
-                    elapsed_time = round(end_time - start_time, 1)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    full_response += f" ({elapsed_time}s)"  # Append response time
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                    end_time = time.time()
+                    time_taken = end_time - start_time
+                # Display time taken and response separately
+                message_placeholder.markdown(f"<span style='color: gray; font-size: 0.8em;'>Response Time: {time_taken:.1f}s</span><br>{full_response}", unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "time_taken": time_taken, "avatar": "🤖"})
             last_role = "assistant"
 
     # Conditionally display reset button
