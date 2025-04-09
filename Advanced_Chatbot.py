@@ -190,38 +190,36 @@ st.markdown(
     """
 <style>
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
-    color: white !important; /* Ensure text is white */
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    color: white !important;
     border: none;
-    border-radius: 25px; /* Rounded corners */
-    padding: 10px 20px; /* Padding */
-    font-size: 1.2em; /* Font size */
-    font-weight: bold; /* Bold text */
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
-    display: inline-flex; /* Helps with alignment */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
-    width: auto; /* Fit content width */
-    min-width: 100px; /* Optional: ensure a minimum width */
-    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
+    margin-top: 5px;
+    width: auto;
+    min-width: 100px;
+    font-family: 'Times New Roman', Times, serif !important;
 }
 .stButton>button:hover {
-    transform: scale(1.05); /* Slightly larger on hover */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
-    color: white !important; /* Ensure text stays white on hover */
+    transform: scale(1.05);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    color: white !important;
 }
 .stButton>button:active {
-    transform: scale(0.98); /* Slightly smaller when clicked */
+    transform: scale(0.98);
 }
 
-/* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
 
-/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
@@ -234,11 +232,29 @@ st.markdown(
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
+.st-emotion-cache-r421ms {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent { /* For text inside expanders if used */
+.streamlit-expanderContent {
     font-family: 'Times New Roman', Times, serif !important;
+}
+
+/* --- New CSS for Response Time Positioning --- */
+.stChatMessage.assistant {
+    display: flex; /* Use flexbox for assistant chat messages */
+    flex-direction: column; /* Stack content vertically */
+}
+
+.stChatMessage.assistant > div:nth-child(2) { /* Target the container of the response text */
+    order: 1; /* Display response text first */
+}
+
+.response-time {
+    font-size: 0.8em;
+    color: grey;
+    order: 2; /* Display response time second, below the text */
+    align-self: flex-start; /* Align to the start of the chat bubble (left) */
+    margin-top: 5px; /* Add some top margin to separate from text */
 }
 </style>
     """,
@@ -250,7 +266,7 @@ st.markdown(
     """
 <style>
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    background: linear-gradient(90deg, #29ABE2, #0077B6);
     color: white !important;
 }
 </style>
@@ -263,8 +279,8 @@ st.markdown(
     """
 <style>
     .horizontal-line {
-        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-        margin: 15px 0; /* Adjust spacing above and below the line */
+        border-top: 2px solid #e0e0e0;
+        margin: 15px 0;
     }
 </style>
     """,
@@ -366,7 +382,7 @@ if st.session_state.models_loaded and not st.session_state.show_chat:
     )
 
     # Continue button aligned to the right using columns
-    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
+    col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
@@ -394,7 +410,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -424,11 +440,11 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt, response_time = generate_response(model, tokenizer, prompt_from_dropdown) # Get response and time
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
+                    response_gpt, response_time = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)"
 
-                message_placeholder.markdown(f"{full_response} <div style='font-size: 0.8em; color: grey; margin-top: -8px;'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True) # Display response time below
+                message_placeholder.markdown(f"{full_response} <div class='response-time'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True)
 
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
@@ -451,11 +467,11 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt, response_time = generate_response(model, tokenizer, prompt) # Get response and time
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
-                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
+                    response_gpt, response_time = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)"
 
-                message_placeholder.markdown(f"{full_response} <div style='font-size: 0.8em; color: grey; margin-top: -8px;'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True) # Display response time below
+                message_placeholder.markdown(f"{full_response} <div class='response-time'>Response Time: {response_time_formatted}</div>", unsafe_allow_html=True)
 
             st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
