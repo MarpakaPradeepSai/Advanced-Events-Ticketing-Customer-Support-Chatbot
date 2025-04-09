@@ -237,20 +237,6 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
-
-/* Custom style for response time badge */
-.response-time-badge {
-    display: block;
-    text-align: center;
-    background-color: rgba(128, 128, 128, 0.2);
-    color: #555;
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 12px;
-    margin-top: 2px;
-    margin-bottom: 5px;
-    width: fit-content;
-}
 </style>
     """,
     unsafe_allow_html=True,
@@ -405,7 +391,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None  # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
@@ -434,22 +420,16 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    # Start timing the response generation
-                    start_time = time.time()
-                    
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                    start_time = time.time()  # Start timer
                     response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                    end_time = time.time()    # End timer
+                    elapsed_time = round(end_time - start_time, 1)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    
-                    # Calculate response time
-                    response_time = time.time() - start_time
-                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
-                    
-                    # Add response time badge below the message
-                    full_response_with_time = f"{response_time_formatted}{full_response}"
+                    full_response += f" ({elapsed_time}s)"  # Append response time
 
-                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
     # Input box at the bottom
@@ -469,22 +449,16 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    # Start timing the response generation
-                    start_time = time.time()
-                    
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                    start_time = time.time()  # Start timer
                     response_gpt = generate_response(model, tokenizer, prompt)
+                    end_time = time.time()    # End timer
+                    elapsed_time = round(end_time - start_time, 1)
                     full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    
-                    # Calculate response time
-                    response_time = time.time() - start_time
-                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
-                    
-                    # Add response time badge below the message
-                    full_response_with_time = f"{response_time_formatted}{full_response}"
+                    full_response += f" ({elapsed_time}s)"  # Append response time
 
-                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
     # Conditionally display reset button
