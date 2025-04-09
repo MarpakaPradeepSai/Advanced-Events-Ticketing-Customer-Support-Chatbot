@@ -168,6 +168,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
     input_text = f"Instruction: {instruction} Response:"
     inputs = tokenizer(input_text, return_tensors="pt", padding=True).to(device)
     with torch.no_grad():
+        start_time = time.time()
         outputs = model.generate(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
@@ -178,9 +179,11 @@ def generate_response(model, tokenizer, instruction, max_length=256):
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
+        end_time = time.time()
+    response_time = end_time - start_time
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response_start = response.find("Response:") + len("Response:")
-    return response[response_start:].strip()
+    return response[response_start:].strip(), response_time
 
 # CSS styling
 st.markdown(
@@ -236,20 +239,6 @@ st.markdown(
 }
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
-}
-
-/* Custom style for response time badge */
-.response-time-badge {
-    display: block;
-    text-align: center;
-    background-color: rgba(128, 128, 128, 0.2);
-    color: #555;
-    border-radius: 10px;
-    padding: 2px 8px;
-    font-size: 12px;
-    margin-top: 2px;
-    margin-bottom: 5px;
-    width: fit-content;
 }
 </style>
     """,
@@ -314,7 +303,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation status?",
     "How can I sell my ticket?"
@@ -329,7 +318,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -434,22 +423,14 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    # Start timing the response generation
-                    start_time = time.time()
-                    
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    
-                    # Calculate response time
-                    response_time = time.time() - start_time
-                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
-                    
-                    # Add response time badge below the message
-                    full_response_with_time = f"{response_time_formatted}{full_response}"
+                    response_gpt, response_time = generate_response(model, tokenizer, prompt_from_dropdown) # Get response and time
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
 
-                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
+                message_placeholder.markdown(f"{full_response} <span style='font-size: 0.8em; color: grey;'>{response_time_formatted}</span>", unsafe_allow_html=True) # Display response time
+
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
     # Input box at the bottom
@@ -469,22 +450,14 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 message_placeholder = st.empty()
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
-                    # Start timing the response generation
-                    start_time = time.time()
-                    
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                    
-                    # Calculate response time
-                    response_time = time.time() - start_time
-                    response_time_formatted = f"<div class='response-time-badge'>({response_time:.1f}s)</div>"
-                    
-                    # Add response time badge below the message
-                    full_response_with_time = f"{response_time_formatted}{full_response}"
+                    response_gpt, response_time = generate_response(model, tokenizer, prompt) # Get response and time
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_time_formatted = f"({response_time:.0f}s)" if response_time >= 1 else f"({response_time*1000:.0f}ms)" if response_time > 0 else "(<1ms)" # Format time
 
-                message_placeholder.markdown(full_response_with_time, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response_with_time, "avatar": "🤖"})
+                message_placeholder.markdown(f"{full_response} <span style='font-size: 0.8em; color: grey;'>{response_time_formatted}</span>", unsafe_allow_html=True) # Display response time
+
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
             last_role = "assistant"
 
     # Conditionally display reset button
