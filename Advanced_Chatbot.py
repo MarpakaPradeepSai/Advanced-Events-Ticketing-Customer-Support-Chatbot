@@ -296,6 +296,7 @@ if "models_loaded" not in st.session_state:
 # Example queries for dropdown
 example_queries = [
     "How do I buy a ticket?",
+    "How can I cancel my ticket?",
     "How can I upgrade my ticket for the upcoming event in Hyderabad?",
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
