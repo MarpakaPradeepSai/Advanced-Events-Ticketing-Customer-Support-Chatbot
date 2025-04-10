@@ -237,6 +237,18 @@ st.markdown(
 .streamlit-expanderContent { /* For text inside expanders if used */
     font-family: 'Times New Roman', Times, serif !important;
 }
+
+/* Style for the response time display */
+.response-time {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 0px;
+    margin-left: 40px;
+    margin-bottom: 5px;
+    font-style: italic;
+    position: relative;
+    top: -5px;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -268,7 +280,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- New CSS for Chat Input Shadow Effect ---  
+# --- New CSS for Chat Input Shadow Effect ---
 st.markdown(
     """
 <style>
@@ -392,14 +404,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None  # Track last message role
+    last_role = None # Track last message role
 
     # Display chat messages from history
     for message in st.session_state.chat_history:
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
+            
         with st.chat_message(message["role"], avatar=message["avatar"]):
+            # If this is an assistant message with response time, display it right after the avatar
+            if message["role"] == "assistant" and "response_time" in message:
+                st.markdown(f"<div class='response-time'>({message['response_time']}s)</div>", unsafe_allow_html=True)
+            
+            # Display the actual message content
             st.markdown(message["content"], unsafe_allow_html=True)
+            
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -417,19 +436,27 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
             last_role = "user"
 
+            # Generate response
+            start_time = time.time()  # Start timing
+            dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+            response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+            full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+            end_time = time.time()  # End timing
+            response_time = round(end_time - start_time, 1)  # Calculate time in seconds
+
+            # Display chat message with timing
             with st.chat_message("assistant", avatar="🤖"):
-                start_time = time.time()
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                end_time = time.time()
-                time_taken = int(round(end_time - start_time))
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                st.markdown(f"<div style='font-size:10px; color:grey;'>({time_taken}s)</div>", unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response + f"<br><div style='font-size:10px; color:grey;'>({time_taken}s)</div>", "avatar": "🤖"})
+                # First display response time right after the avatar
+                st.markdown(f"<div class='response-time'>({response_time}s)</div>", unsafe_allow_html=True)
+                # Then display the message content
+                st.markdown(full_response, unsafe_allow_html=True)
+            
+            st.session_state.chat_history.append({
+                "role": "assistant", 
+                "content": full_response, 
+                "avatar": "🤖",
+                "response_time": response_time
+            })
             last_role = "assistant"
 
     # Input box at the bottom
@@ -445,19 +472,27 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 st.markdown(prompt, unsafe_allow_html=True)
             last_role = "user"
 
+            # Generate response
+            start_time = time.time()  # Start timing
+            dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+            response_gpt = generate_response(model, tokenizer, prompt)
+            full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+            end_time = time.time()  # End timing
+            response_time = round(end_time - start_time, 1)  # Calculate time in seconds
+
+            # Display chat message with timing
             with st.chat_message("assistant", avatar="🤖"):
-                start_time = time.time()
-                message_placeholder = st.empty()
-                generating_response_text = "Generating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-                end_time = time.time()
-                time_taken = int(round(end_time - start_time))
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                st.markdown(f"<div style='font-size:10px; color:grey;'>({time_taken}s)</div>", unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response + f"<br><div style='font-size:10px; color:grey;'>({time_taken}s)</div>", "avatar": "🤖"})
+                # First display response time right after the avatar
+                st.markdown(f"<div class='response-time'>({response_time}s)</div>", unsafe_allow_html=True)
+                # Then display the message content
+                st.markdown(full_response, unsafe_allow_html=True)
+            
+            st.session_state.chat_history.append({
+                "role": "assistant", 
+                "content": full_response, 
+                "avatar": "🤖",
+                "response_time": response_time
+            })
             last_role = "assistant"
 
     # Conditionally display reset button
