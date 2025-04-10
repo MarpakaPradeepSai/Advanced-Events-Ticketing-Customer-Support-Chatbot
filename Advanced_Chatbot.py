@@ -162,6 +162,7 @@ def extract_dynamic_placeholders(user_question, nlp):
 
 # Generate a chatbot response using DistilGPT2
 def generate_response(model, tokenizer, instruction, max_length=256):
+    start_time = time.time()
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -180,7 +181,9 @@ def generate_response(model, tokenizer, instruction, max_length=256):
         )
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response_start = response.find("Response:") + len("Response:")
-    return response[response_start:].strip()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    return response[response_start:].strip(), elapsed_time
 
 # CSS styling
 st.markdown(
@@ -301,7 +304,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation status?",
     "How can I sell my ticket?"
@@ -316,7 +319,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -400,6 +403,9 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
+            if message["role"] == "assistant" and "time" in message:
+                time_str = f"({int(message['time'])}s)" if message['time'] >= 1 else f"({int(message['time']*1000)}ms)"
+                st.markdown(f"<div style='text-align: left; margin-top: -1.3em; margin-left: 2.5em; font-size: 0.8em; color: grey;'>{time_str}</div>", unsafe_allow_html=True)
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -422,12 +428,12 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt_from_dropdown) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt, elapsed_time = generate_response(model, tokenizer, prompt_from_dropdown)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                     # time.sleep(1) # Optional delay
 
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "time": elapsed_time})
             last_role = "assistant"
 
     # Input box at the bottom
@@ -448,12 +454,12 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 generating_response_text = "Generating response..."
                 with st.spinner(generating_response_text):
                     dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, prompt) # Use different variable name
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders) # Use response_gpt
+                    response_gpt, elapsed_time = generate_response(model, tokenizer, prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
                     # time.sleep(1) # Optional delay
 
                 message_placeholder.markdown(full_response, unsafe_allow_html=True)
-            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖"})
+                st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": "🤖", "time": elapsed_time})
             last_role = "assistant"
 
     # Conditionally display reset button
