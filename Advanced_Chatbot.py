@@ -23,11 +23,9 @@ MODEL_FILES = [
 # Function to download model files from GitHub
 def download_model_files(model_dir="/tmp/DistilGPT2_Model"):
     os.makedirs(model_dir, exist_ok=True)
-
     for filename in MODEL_FILES:
         url = f"{GITHUB_MODEL_URL}/{filename}"
         local_path = os.path.join(model_dir, filename)
-
         if not os.path.exists(local_path):
             response = requests.get(url)
             if response.status_code == 200:
@@ -51,7 +49,6 @@ def load_model_and_tokenizer():
     if not download_model_files(model_dir):
         st.error("Model download failed. Check your internet connection or GitHub URL.")
         return None, None
-
     model = GPT2LMHeadModel.from_pretrained(model_dir, trust_remote_code=True)
     tokenizer = GPT2Tokenizer.from_pretrained(model_dir)
     return model, tokenizer
@@ -187,38 +184,34 @@ st.markdown(
     """
 <style>
 .stButton>button {
-    background: linear-gradient(90deg, #ff8a00, #e52e71); /* Stylish gradient */
-    color: white !important; /* Ensure text is white */
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    color: white !important;
     border: none;
-    border-radius: 25px; /* Rounded corners */
-    padding: 10px 20px; /* Padding */
-    font-size: 1.2em; /* Font size */
-    font-weight: bold; /* Bold text */
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
-    display: inline-flex; /* Helps with alignment */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 5px; /* Adjust slightly if needed for alignment with selectbox */
-    width: auto; /* Fit content width */
-    min-width: 100px; /* Optional: ensure a minimum width */
-    font-family: 'Times New Roman', Times, serif !important; /* Times New Roman for buttons */
+    margin-top: 5px;
+    width: auto;
+    min-width: 100px;
+    font-family: 'Times New Roman', Times, serif !important;
 }
 .stButton>button:hover {
-    transform: scale(1.05); /* Slightly larger on hover */
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3); /* Shadow on hover */
-    color: white !important; /* Ensure text stays white on hover */
+    transform: scale(1.05);
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    color: white !important;
 }
 .stButton>button:active {
-    transform: scale(0.98); /* Slightly smaller when clicked */
+    transform: scale(0.98);
 }
-
-/* Apply Times New Roman to all text elements */
 * {
     font-family: 'Times New Roman', Times, serif !important;
 }
-
-/* Specific adjustments for Streamlit elements if needed (example for selectbox - may vary) */
 .stSelectbox > div > div > div > div {
     font-family: 'Times New Roman', Times, serif !important;
 }
@@ -231,35 +224,22 @@ st.markdown(
 .stChatMessage {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.st-emotion-cache-r421ms { /* Example class for st.error, st.warning, etc. - Inspect element to confirm */
+.st-emotion-cache-r421ms {
     font-family: 'Times New Roman', Times, serif !important;
 }
-.streamlit-expanderContent { /* For text inside expanders if used */
+.streamlit-expanderContent {
     font-family: 'Times New Roman', Times, serif !important;
-}
-
-/* Style for the response time display */
-.response-time {
-    font-size: 0.8em;
-    color: #6c757d;
-    margin-top: 0px;
-    margin-left: 40px;
-    margin-bottom: 5px;
-    font-style: italic;
-    position: relative;
-    top: -5px;
 }
 </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Custom CSS for the "Ask this question" button
 st.markdown(
     """
 <style>
 div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-type(1) {
-    background: linear-gradient(90deg, #29ABE2, #0077B6); /* Different gradient */
+    background: linear-gradient(90deg, #29ABE2, #0077B6);
     color: white !important;
 }
 </style>
@@ -267,20 +247,18 @@ div[data-testid="stHorizontalBlock"] div[data-testid="stButton"] button:nth-of-t
     unsafe_allow_html=True,
 )
 
-# Custom CSS for horizontal line separator
 st.markdown(
     """
 <style>
     .horizontal-line {
-        border-top: 2px solid #e0e0e0; /* Adjust color and thickness as needed */
-        margin: 15px 0; /* Adjust spacing above and below the line */
+        border-top: 2px solid #e0e0e0;
+        margin: 15px 0;
     }
 </style>
     """,
     unsafe_allow_html=True,
 )
 
-# --- New CSS for Chat Input Shadow Effect ---
 st.markdown(
     """
 <style>
@@ -295,17 +273,14 @@ div[data-testid="stChatInput"] {
     unsafe_allow_html=True,
 )
 
-# Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility and model loading status
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
 
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
 
-# Example queries for dropdown
 example_queries = [
     "How do I buy a ticket?",
     "How can I cancel my ticket?",
@@ -319,16 +294,11 @@ example_queries = [
     "How can I sell my ticket?"
 ]
 
-# First, display loading message and load models
 if not st.session_state.models_loaded:
     with st.spinner("Loading models and resources... Please wait..."):
         try:
-            # Initialize spaCy model for NER
             nlp = load_spacy_model()
-
-            # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -339,7 +309,6 @@ if not st.session_state.models_loaded:
         except Exception as e:
             st.error(f"Error loading models: {str(e)}")
 
-# Display Disclaimer and Continue button only after models are loaded
 if st.session_state.models_loaded and not st.session_state.show_chat:
     st.markdown(
         """
@@ -374,19 +343,14 @@ if st.session_state.models_loaded and not st.session_state.show_chat:
         """,
         unsafe_allow_html=True
     )
-
-    # Continue button aligned to the right using columns
-    col1, col2 = st.columns([4, 1])  # Adjust ratios as needed
+    col1, col2 = st.columns([4, 1])
     with col2:
         if st.button("Continue", key="continue_button"):
             st.session_state.show_chat = True
             st.rerun()
 
-# Show chat interface only after clicking Continue and models are loaded
 if st.session_state.models_loaded and st.session_state.show_chat:
     st.write("Ask me about ticket cancellations, refunds, or any event-related inquiries!")
-
-    # Dropdown and Button section at the TOP, before chat history and input
     selected_query = st.selectbox(
         "Choose a query from examples:",
         ["Choose your question"] + example_queries,
@@ -394,41 +358,28 @@ if st.session_state.models_loaded and st.session_state.show_chat:
         label_visibility="collapsed"
     )
     process_query_button = st.button("Ask this question", key="query_button")
-
-    # Access loaded models from session state
     nlp = st.session_state.nlp
     model = st.session_state.model
     tokenizer = st.session_state.tokenizer
 
-    # Initialize chat history in session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    last_role = None # Track last message role
+    last_role = None
 
-    # Display chat messages from history
     for message in st.session_state.chat_history:
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
-            
         with st.chat_message(message["role"], avatar=message["avatar"]):
-            # If this is an assistant message with response time, display it right after the avatar
-            if message["role"] == "assistant" and "response_time" in message:
-                st.markdown(f"<div class='response-time'>({message['response_time']}s)</div>", unsafe_allow_html=True)
-            
-            # Display the actual message content
             st.markdown(message["content"], unsafe_allow_html=True)
-            
         last_role = message["role"]
 
-    # Process selected query from dropdown
     if process_query_button:
         if selected_query == "Choose your question":
             st.error("⚠️ Please select your question from the dropdown.")
         elif selected_query:
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
-
             st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
@@ -436,30 +387,21 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 st.markdown(prompt_from_dropdown, unsafe_allow_html=True)
             last_role = "user"
 
-            # Generate response
-            start_time = time.time()  # Start timing
-            dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
-            response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
-            full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-            end_time = time.time()  # End timing
-            response_time = round(end_time - start_time, 1)  # Calculate time in seconds
-
-            # Display chat message with timing
-            with st.chat_message("assistant", avatar="🤖"):
-                # First display response time right after the avatar
-                st.markdown(f"<div class='response-time'>({response_time}s)</div>", unsafe_allow_html=True)
-                # Then display the message content
+            # Measure response generation time before displaying assistant message
+            start_time = time.time()
+            with st.spinner("Generating response..."):
+                dynamic_placeholders = extract_dynamic_placeholders(prompt_from_dropdown, nlp)
+                response_gpt = generate_response(model, tokenizer, prompt_from_dropdown)
+                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+            end_time = time.time()
+            time_taken = int(round(end_time - start_time))
+            # Create custom avatar with time displayed just below the icon
+            avatar_with_time = f"🤖<br><span style='font-size:10px; color:grey;'>({time_taken}s)</span>"
+            with st.chat_message("assistant", avatar=avatar_with_time):
                 st.markdown(full_response, unsafe_allow_html=True)
-            
-            st.session_state.chat_history.append({
-                "role": "assistant", 
-                "content": full_response, 
-                "avatar": "🤖",
-                "response_time": response_time
-            })
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": avatar_with_time})
             last_role = "assistant"
 
-    # Input box at the bottom
     if prompt := st.chat_input("Enter your own question:"):
         prompt = prompt[0].upper() + prompt[1:] if prompt else prompt
         if not prompt.strip():
@@ -472,30 +414,19 @@ if st.session_state.models_loaded and st.session_state.show_chat:
                 st.markdown(prompt, unsafe_allow_html=True)
             last_role = "user"
 
-            # Generate response
-            start_time = time.time()  # Start timing
-            dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
-            response_gpt = generate_response(model, tokenizer, prompt)
-            full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-            end_time = time.time()  # End timing
-            response_time = round(end_time - start_time, 1)  # Calculate time in seconds
-
-            # Display chat message with timing
-            with st.chat_message("assistant", avatar="🤖"):
-                # First display response time right after the avatar
-                st.markdown(f"<div class='response-time'>({response_time}s)</div>", unsafe_allow_html=True)
-                # Then display the message content
+            start_time = time.time()
+            with st.spinner("Generating response..."):
+                dynamic_placeholders = extract_dynamic_placeholders(prompt, nlp)
+                response_gpt = generate_response(model, tokenizer, prompt)
+                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+            end_time = time.time()
+            time_taken = int(round(end_time - start_time))
+            avatar_with_time = f"🤖<br><span style='font-size:10px; color:grey;'>({time_taken}s)</span>"
+            with st.chat_message("assistant", avatar=avatar_with_time):
                 st.markdown(full_response, unsafe_allow_html=True)
-            
-            st.session_state.chat_history.append({
-                "role": "assistant", 
-                "content": full_response, 
-                "avatar": "🤖",
-                "response_time": response_time
-            })
+            st.session_state.chat_history.append({"role": "assistant", "content": full_response, "avatar": avatar_with_time})
             last_role = "assistant"
 
-    # Conditionally display reset button
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
