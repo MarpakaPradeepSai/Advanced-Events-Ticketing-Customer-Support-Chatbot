@@ -278,6 +278,23 @@ div[data-testid="stChatInput"] {
     padding: 10px;
     margin: 10px 0;
 }
+
+.regenerate-button {
+    background-color: transparent;
+    border: none;
+    color: #888; /* Grey color */
+    padding: 0px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+.regenerate-button:hover {
+    opacity: 1;
+    color: #555;
+}
 </style>
     """,
     unsafe_allow_html=True,
@@ -286,15 +303,12 @@ div[data-testid="stChatInput"] {
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility, model loading status and last query
+# Initialize session state for controlling disclaimer visibility and model loading status
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
 
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
-
-if "last_query" not in st.session_state:
-    st.session_state.last_query = None
 
 # Example queries for dropdown
 example_queries = [
@@ -397,27 +411,36 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     last_role = None # Track last message role
 
     # Display chat messages from history
-    for i, message in enumerate(st.session_state.chat_history):
+    for index, message in enumerate(st.session_state.chat_history):
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
             if message["role"] == "assistant":
-                if i == len(st.session_state.chat_history) -1 : # Only show regenerate button for the last assistant message
-                    if st.button("🔄 Regenerate", key=f"regenerate_{i}"):
-                        with st.spinner("Regenerating response..."):
-                            user_query_to_regenerate = st.session_state.last_query # Get the last user query
-                            if user_query_to_regenerate:
-                                dynamic_placeholders = extract_dynamic_placeholders(user_query_to_regenerate, nlp)
-                                response_gpt = generate_response(model, tokenizer, user_query_to_regenerate)
-                                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-
-                                # Update the last assistant message in chat history
-                                st.session_state.chat_history[-1]["content"] = full_response
-                                st.rerun() # Rerun to display updated chat history
-                            else:
-                                st.error("No previous query to regenerate.")
+                regenerate_key = f"regenerate_{index}"
+                if st.button("🔄", key=regenerate_key, help="Regenerate response", disabled=st.session_state.get(f"generating_{index}", False), on_click=regenerate_response_callback, args=(index,)): # Pass index
+                    pass # Button action is handled by callback
         last_role = message["role"]
+
+    # Define regenerate response callback
+    def regenerate_response_callback(msg_index):
+        user_prompt = st.session_state.chat_history[msg_index - 1]["content"] # Get user prompt from previous message
+        if user_prompt:
+            st.session_state[f"generating_{msg_index}"] = True # Disable regenerate button during generation
+            with st.chat_message("assistant", avatar="🤖"):
+                message_placeholder = st.empty()
+                generating_response_text = "Regenerating response..."
+                with st.spinner(generating_response_text):
+                    dynamic_placeholders = extract_dynamic_placeholders(user_prompt, nlp)
+                    response_gpt = generate_response(model, tokenizer, user_prompt)
+                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+
+                message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                # Update chat history with the new response
+                st.session_state.chat_history[msg_index]["content"] = full_response
+            st.session_state[f"generating_{msg_index}"] = False # Enable regenerate button after generation
+            st.rerun() # Rerun to reflect changes in UI
+
 
     # Process selected query from dropdown
     if process_query_button:
@@ -427,7 +450,6 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
 
-            st.session_state.last_query = prompt_from_dropdown # Store the last query
             st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
@@ -454,7 +476,6 @@ if st.session_state.models_loaded and st.session_state.show_chat:
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.")
         else:
-            st.session_state.last_query = prompt # Store the last query
             st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
@@ -479,6 +500,5 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
-            st.session_state.last_query = None # Clear last query as well
             last_role = None
             st.rerun()
