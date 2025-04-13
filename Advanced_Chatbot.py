@@ -164,7 +164,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 
 
 # --- CSS Styling ---
-# (Keep your original CSS block, just ADD the regenerate button style inside)
+# (Keep your original CSS block, just ADJUST the regenerate button style inside)
 st.markdown(
     """
 <style>
@@ -229,24 +229,29 @@ div[data-testid="stChatInput"] {
     margin: 10px 0;
 }
 
-/* --- ADD THIS STYLE FOR THE REGENERATE BUTTON --- */
+/* --- UPDATED STYLE FOR THE REGENERATE BUTTON --- */
 div[data-testid="stChatMessage"] div[data-testid="stButton"] button {
     background-color: #f0f2f6 !important; /* Light gray background */
     color: #333 !important; /* Darker text */
     border: 1px solid #ccc !important; /* Subtle border */
-    border-radius: 50% !important; /* Make it round */
-    padding: 4px !important; /* Adjust padding to fit icon */
-    font-size: 1.0em !important; /* Adjust icon size if needed */
+    border-radius: 50% !important; /* Ensure it's a circle */
+    padding: 0 !important; /* Remove padding that might interfere with shape */
+    font-size: 1.0em !important; /* Icon size */
     font-weight: normal !important; /* Normal weight */
-    min-width: 28px !important; /* Make it small and square-ish */
+    /* Force equal width and height */
     width: 28px !important;
     height: 28px !important;
+    min-width: 28px !important; /* Ensure minimum size */
     margin-left: 8px !important; /* Space it slightly from the text */
     margin-top: 0px !important; /* Align vertically */
-    line-height: 1; /* Ensure icon is centered vertically */
-    aspect-ratio: 1/1 !important; /* Ensure it's a perfect circle */
+    line-height: 28px !important; /* Center icon vertically by matching height */
+    text-align: center !important; /* Center icon horizontally */
+    display: inline-flex !important; /* Use flex to help center content */
+    align-items: center !important; /* Flex vertical centering */
+    justify-content: center !important; /* Flex horizontal centering */
     /* Override the main button gradient/styles */
     background: #f0f2f6 !important;
+    box-sizing: border-box !important; /* Include padding/border in size */
 }
 div[data-testid="stChatMessage"] div[data-testid="stButton"] button:hover {
     background-color: #e0e2e6 !important; /* Slightly darker on hover */
@@ -257,7 +262,7 @@ div[data-testid="stChatMessage"] div[data-testid="stButton"] button:hover {
 div[data-testid="stChatMessage"] div[data-testid="stButton"] button:active {
     transform: scale(1.0) !important; /* Smaller click effect */
 }
-/* --- END OF ADDED STYLE --- */
+/* --- END OF UPDATED STYLE --- */
 
 </style>
     """,
@@ -327,7 +332,13 @@ if not st.session_state.models_loaded:
             st.error(f"Error loading models: {str(e)}")
     # If models loaded successfully in the previous step, rerun to show disclaimer/chat
     if st.session_state.models_loaded:
-        st.rerun()
+        # Check if chat should be shown yet, otherwise rerun will just show disclaimer again
+        if not st.session_state.show_chat:
+            # Don't automatically rerun if disclaimer isn't bypassed yet
+             pass
+        else:
+            # Rerun only if models loaded AND disclaimer passed
+            st.rerun()
 
 
 # --- Disclaimer Logic ---
