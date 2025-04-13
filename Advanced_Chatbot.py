@@ -164,8 +164,7 @@ def generate_response(model, tokenizer, instruction, max_length=256):
 
 
 # --- CSS Styling ---
-# (Kept exactly as provided previously, as the CSS for the regenerate button
-# already defines equal width and height with border-radius: 50% for a circular shape)
+# (Keep your original CSS block, just ADD the regenerate button style inside)
 st.markdown(
     """
 <style>
@@ -230,7 +229,7 @@ div[data-testid="stChatInput"] {
     margin: 10px 0;
 }
 
-/* --- STYLE FOR THE REGENERATE BUTTON (Already set for a circle) --- */
+/* --- ADD THIS STYLE FOR THE REGENERATE BUTTON --- */
 div[data-testid="stChatMessage"] div[data-testid="stButton"] button {
     background-color: #f0f2f6 !important; /* Light gray background */
     color: #333 !important; /* Darker text */
@@ -239,12 +238,13 @@ div[data-testid="stChatMessage"] div[data-testid="stButton"] button {
     padding: 4px !important; /* Adjust padding to fit icon */
     font-size: 1.0em !important; /* Adjust icon size if needed */
     font-weight: normal !important; /* Normal weight */
-    min-width: 28px !important; /* Ensure minimum size matches width/height */
-    width: 28px !important; /* Equal width for circle */
-    height: 28px !important; /* Equal height for circle */
+    min-width: 28px !important; /* Make it small and square-ish */
+    width: 28px !important;
+    height: 28px !important;
     margin-left: 8px !important; /* Space it slightly from the text */
     margin-top: 0px !important; /* Align vertically */
     line-height: 1; /* Ensure icon is centered vertically */
+    aspect-ratio: 1/1 !important; /* Ensure it's a perfect circle */
     /* Override the main button gradient/styles */
     background: #f0f2f6 !important;
 }
@@ -257,7 +257,7 @@ div[data-testid="stChatMessage"] div[data-testid="stButton"] button:hover {
 div[data-testid="stChatMessage"] div[data-testid="stButton"] button:active {
     transform: scale(1.0) !important; /* Smaller click effect */
 }
-/* --- END OF REGENERATE BUTTON STYLE --- */
+/* --- END OF ADDED STYLE --- */
 
 </style>
     """,
@@ -434,19 +434,17 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
 
         with st.chat_message(message["role"], avatar=message["avatar"]):
-            # Display the message content
             st.markdown(message["content"], unsafe_allow_html=True)
 
-            # --- REGENERATE BUTTON LOGIC ---
+            # --- ADDED REGENERATE BUTTON ---
             # Add regenerate button ONLY for assistant messages that follow a user message
             if message["role"] == "assistant" and idx > 0 and st.session_state.chat_history[idx - 1]["role"] == "user":
                 button_key = f"regenerate_{idx}"
                 # Add the button. When clicked, it sets the session state and reruns.
-                # The CSS above ensures this button is circular.
                 if st.button("🔄", key=button_key, help="Regenerate this response"):
                     st.session_state.regenerate_index = idx # Store the index to regenerate
                     st.rerun() # Trigger rerun to handle regeneration at the top
-            # --- END REGENERATE BUTTON LOGIC ---
+            # --- END ADDED REGENERATE BUTTON ---
 
         last_role = message["role"]
 
