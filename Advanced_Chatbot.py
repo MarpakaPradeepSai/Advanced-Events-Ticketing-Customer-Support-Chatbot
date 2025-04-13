@@ -282,18 +282,19 @@ div[data-testid="stChatInput"] {
 .regenerate-button {
     background-color: transparent;
     border: none;
-    color: #888; /* Grey color */
+    color: grey;
     padding: 0px;
-    margin-left: 10px;
+    margin-top: -10px; /* Adjust as needed for vertical placement */
+    margin-bottom: 5px;
     cursor: pointer;
-    font-size: 1em;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
+    font-size: 1.1em;
+    transition: color 0.2s;
+    display: block; /* Ensure button takes full width if needed */
+    text-align: right; /* Align button to the right */
 }
 
 .regenerate-button:hover {
-    opacity: 1;
-    color: #555;
+    color: black;
 }
 </style>
     """,
@@ -417,30 +418,25 @@ if st.session_state.models_loaded and st.session_state.show_chat:
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
             if message["role"] == "assistant":
-                regenerate_key = f"regenerate_{index}"
-                if st.button("🔄", key=regenerate_key, help="Regenerate response", disabled=st.session_state.get(f"generating_{index}", False), on_click=regenerate_response_callback, args=(index,)): # Pass index
-                    pass # Button action is handled by callback
+                if st.button("🔄 Regenerate", key=f"regenerate_{index}", help="Click to regenerate response", disabled=st.session_state.get(f"regenerating_{index}", False),  use_container_width=False, format_func=lambda x: 'Regenerate Response' if not st.session_state.get(f"regenerating_{index}", False) else 'Generating...', ):
+                    st.session_state[f"regenerating_{index}"] = True # Set regenerating flag
+                    user_query = st.session_state.chat_history[index - 1]["content"]
+
+                    with st.chat_message("assistant", avatar="🤖"):
+                        message_placeholder = st.empty()
+                        generating_response_text = "Generating response..."
+                        with st.spinner(generating_response_text):
+                            dynamic_placeholders = extract_dynamic_placeholders(user_query, nlp)
+                            response_gpt = generate_response(model, tokenizer, user_query)
+                            full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+                            # time.sleep(1) # Optional delay
+
+                        message_placeholder.markdown(full_response, unsafe_allow_html=True)
+                        st.session_state.chat_history[index]["content"] = full_response # Update chat history with new response
+                    st.session_state[f"regenerating_{index}"] = False # Reset regenerating flag
+                    st.rerun() # Rerun to display updated chat history
+
         last_role = message["role"]
-
-    # Define regenerate response callback
-    def regenerate_response_callback(msg_index):
-        user_prompt = st.session_state.chat_history[msg_index - 1]["content"] # Get user prompt from previous message
-        if user_prompt:
-            st.session_state[f"generating_{msg_index}"] = True # Disable regenerate button during generation
-            with st.chat_message("assistant", avatar="🤖"):
-                message_placeholder = st.empty()
-                generating_response_text = "Regenerating response..."
-                with st.spinner(generating_response_text):
-                    dynamic_placeholders = extract_dynamic_placeholders(user_prompt, nlp)
-                    response_gpt = generate_response(model, tokenizer, user_prompt)
-                    full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
-
-                message_placeholder.markdown(full_response, unsafe_allow_html=True)
-                # Update chat history with the new response
-                st.session_state.chat_history[msg_index]["content"] = full_response
-            st.session_state[f"generating_{msg_index}"] = False # Enable regenerate button after generation
-            st.rerun() # Rerun to reflect changes in UI
-
 
     # Process selected query from dropdown
     if process_query_button:
