@@ -286,12 +286,15 @@ div[data-testid="stChatInput"] {
 # Streamlit UI
 st.markdown("<h1 style='font-size: 43px;'>Advanced Events Ticketing Chatbot</h1>", unsafe_allow_html=True)
 
-# Initialize session state for controlling disclaimer visibility and model loading status
+# Initialize session state for controlling disclaimer visibility, model loading status and last query
 if "show_chat" not in st.session_state:
     st.session_state.show_chat = False
 
 if "models_loaded" not in st.session_state:
     st.session_state.models_loaded = False
+
+if "last_query" not in st.session_state:
+    st.session_state.last_query = None
 
 # Example queries for dropdown
 example_queries = [
@@ -300,7 +303,7 @@ example_queries = [
     "How do I change my personal details on my ticket?",
     "How can I find details about upcoming events?",
     "How do I contact customer service?",
-    "How do I get a refund?", 
+    "How do I get a refund?",
     "What is the ticket cancellation fee?",
     "How can I track my ticket cancellation status?",
     "How can I sell my ticket?"
@@ -315,7 +318,7 @@ if not st.session_state.models_loaded:
 
             # Load DistilGPT2 model and tokenizer
             model, tokenizer = load_model_and_tokenizer()
-            
+
             if model is not None and tokenizer is not None:
                 st.session_state.models_loaded = True
                 st.session_state.nlp = nlp
@@ -394,11 +397,26 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     last_role = None # Track last message role
 
     # Display chat messages from history
-    for message in st.session_state.chat_history:
+    for i, message in enumerate(st.session_state.chat_history):
         if message["role"] == "user" and last_role == "assistant":
             st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
         with st.chat_message(message["role"], avatar=message["avatar"]):
             st.markdown(message["content"], unsafe_allow_html=True)
+            if message["role"] == "assistant":
+                if i == len(st.session_state.chat_history) -1 : # Only show regenerate button for the last assistant message
+                    if st.button("🔄 Regenerate", key=f"regenerate_{i}"):
+                        with st.spinner("Regenerating response..."):
+                            user_query_to_regenerate = st.session_state.last_query # Get the last user query
+                            if user_query_to_regenerate:
+                                dynamic_placeholders = extract_dynamic_placeholders(user_query_to_regenerate, nlp)
+                                response_gpt = generate_response(model, tokenizer, user_query_to_regenerate)
+                                full_response = replace_placeholders(response_gpt, dynamic_placeholders, static_placeholders)
+
+                                # Update the last assistant message in chat history
+                                st.session_state.chat_history[-1]["content"] = full_response
+                                st.rerun() # Rerun to display updated chat history
+                            else:
+                                st.error("No previous query to regenerate.")
         last_role = message["role"]
 
     # Process selected query from dropdown
@@ -409,6 +427,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
             prompt_from_dropdown = selected_query
             prompt_from_dropdown = prompt_from_dropdown[0].upper() + prompt_from_dropdown[1:] if prompt_from_dropdown else prompt_from_dropdown
 
+            st.session_state.last_query = prompt_from_dropdown # Store the last query
             st.session_state.chat_history.append({"role": "user", "content": prompt_from_dropdown, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
@@ -435,6 +454,7 @@ if st.session_state.models_loaded and st.session_state.show_chat:
         if not prompt.strip():
             st.toast("⚠️ Please enter a question.")
         else:
+            st.session_state.last_query = prompt # Store the last query
             st.session_state.chat_history.append({"role": "user", "content": prompt, "avatar": "👤"})
             if last_role == "assistant":
                 st.markdown("<div class='horizontal-line'></div>", unsafe_allow_html=True)
@@ -459,7 +479,6 @@ if st.session_state.models_loaded and st.session_state.show_chat:
     if st.session_state.chat_history:
         if st.button("Reset Chat", key="reset_button"):
             st.session_state.chat_history = []
+            st.session_state.last_query = None # Clear last query as well
             last_role = None
             st.rerun()
-
-
